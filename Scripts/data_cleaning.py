@@ -1,6 +1,5 @@
 import os
 
-import numpy as np
 import pandas as pd
 
 
@@ -13,14 +12,14 @@ healthy = [
 # fmt: on
 depressed_active = ["S1", "S4", "S5", "S7", "S8", "S11", "S16", "S17", "S18", "S21", "S22", "S26", "S27"]
 depressed_sham = ["S31", "S33", "S35", "S36", "S37", "S40", "S41", "S43", "S44", "S45"]
-depressed = depressed_active + depressed_sham # Delete if unused
+depressed = depressed_active + depressed_sham  # Delete if unused
 A1ref = ["F7", "FT7", "T3", "TP7", "T5", "Fp1", "F3", "FC3", "C3", "CP3", "P3", "O1", "Fpz", "Fz", "FCz"]
 A2ref = ["Cz", "CPz", "Pz", "Oz", "Fp2", "F4", "FC4", "C4", "CP4", "P4", "O2", "F8", "FT8", "T4", "TP8", "T6"]
 
 
 def get_files():
     data_path = "/Users/erlahrafnkelsdottir/Documents/DepEEG/Data/tDCS_EEG_data/"
-    #data_path = "Data/tDCS_EEG_data/"
+    # data_path = "Data/tDCS_EEG_data/"
     subject_folders = os.listdir(data_path)
     txt_file_paths = []
 
@@ -61,10 +60,10 @@ def clean_data():
         A2cols = [s + "-A2" for s in A2ref]
         all_cols = A1cols + A2cols
         df_final = df.drop(columns=df.columns.difference(all_cols))
-        #df = df[df.columns.intersection(all_cols)]
+        # df = df[df.columns.intersection(all_cols)]
         df_final.sort_index(axis=1)
-        #if df.shape[1] >= 31:
-        #    print(df.columns)
+        # if df.shape[1] >= 31:
+        #     print(df.columns)
         print(df_final.shape)
 
         # Then, order all columns identically
@@ -78,9 +77,7 @@ A2cols = [s + "-A2" for s in A2ref]
 all_cols = A1cols + A2cols
 print(len(all_cols))
 print(all_cols)
-channels = get
 
-#clean_data()
 
 """
 def correct_refs():

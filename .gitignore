@@ -133,3 +133,6 @@ Data/*
 
 # Powershell stuff
 Microsoft/*
+
+# This weird thing
+.DS_Store
