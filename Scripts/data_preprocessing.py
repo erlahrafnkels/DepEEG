@@ -38,8 +38,8 @@ depressed = depressed_active + depressed_sham
 
 
 def get_files():
-    # data_path = "/Users/erlahrafnkelsdottir/Documents/DepEEG/Data/tDCS_EEG_data/"
-    data_path = "Data/tDCS_EEG_data/"
+    data_path = "/Users/erlahrafnkelsdottir/Documents/DepEEG/Data/tDCS_EEG_data/"
+    # data_path = "Data/tDCS_EEG_data/"
     subject_folders = os.listdir(data_path)
     txt_file_paths = []
 
@@ -90,21 +90,22 @@ def clean_data():
     return
 
 
-def butter_bandpass(lowcut, highcut, fs, order=5):
+def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
     nyq = 0.5 * fs
     low = lowcut / nyq
     high = highcut / nyq
     b, a = signal.butter(order, [low, high], btype="band")
-    return b, a
-
-
-def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
-    b, a = butter_bandpass(lowcut, highcut, fs, order=order)
     y = signal.filtfilt(b, a, data)
     return y
 
 
-def plot_raw():
+# def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
+#     b, a = butter_bandpass(lowcut, highcut, fs, order=order)
+#     y = signal.filtfilt(b, a, data)
+#     return y
+
+
+def filter():
     data_path = "Data/tDCS_EEG_data/Data_cleaned/"
     s1_eo1_data = pd.read_csv(
         data_path + "S1-Pre-EO1_EEG_cleaned.txt", sep="\t", index_col=False
@@ -129,14 +130,17 @@ def plot_raw():
     quality_factor = (high_freq - low_freq) / m.sqrt(low_freq * high_freq)
     b_notch, a_notch = signal.iirnotch(notch_freq, quality_factor, samp_freq)
     freq, h = signal.freqz(b_notch, a_notch, fs=samp_freq)
+
     plt.figure("filter")
     plt.plot(freq, 20 * np.log10(abs(h)))
+    plt.title("Notch filter")
 
     y_notched = signal.filtfilt(b_notch, a_notch, s1_eo1_data.iloc[:, 0])
 
     plt.figure("raw")
     # plt.plot(s1_eo1_data.iloc[:,0])
     plt.plot(y_notched)
+    plt.title("Example of raw data: Eyes open pre-treatment")
     # plt.legend(labels=['Original', 'Notched'])
 
     y = butter_bandpass_filter(y_notched, low_freq, high_freq, samp_freq)  # , order=6)
@@ -148,9 +152,11 @@ def plot_raw():
     # plt.psd(s1_eo1_data.iloc[:,0])
     # plt.psd(s2_eo1_data.iloc[:,0])
     plt.legend(labels=["Raw", "Notched", "Bandpass + notched"])
+    plt.title("Power spectral density of example")
 
     plt.figure("bandpass")
     plt.plot(y)
+    plt.title("Example filtered")
 
     plt.show()
 
@@ -165,4 +171,4 @@ if __name__ == "__main__":
     else:
         print("Cleaned files in folder.")
 
-    plot_raw()
+    filter()
