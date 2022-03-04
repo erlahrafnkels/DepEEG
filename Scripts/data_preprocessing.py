@@ -99,12 +99,6 @@ def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
     return y
 
 
-# def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
-#     b, a = butter_bandpass(lowcut, highcut, fs, order=order)
-#     y = signal.filtfilt(b, a, data)
-#     return y
-
-
 def filter():
     data_path = "Data/tDCS_EEG_data/Data_cleaned/"
     s1_eo1_data = pd.read_csv(
