@@ -5,6 +5,7 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from omegaconf import OmegaConf
 from scipy import signal
 
 # from scipy.stats import zscore
@@ -35,11 +36,11 @@ depressed_active = ["S1", "S4", "S5", "S7", "S8", "S11", "S16", "S17", "S18", "S
 depressed_sham = ["S31", "S33", "S35", "S36", "S37", "S40", "S41", "S43", "S44", "S45"]
 depressed = depressed_active + depressed_sham
 # fmt: on
+config = OmegaConf.load("config.yaml")
 
 
 def get_files():
-    data_path = "/Users/erlahrafnkelsdottir/Documents/DepEEG/Data/tDCS_EEG_data/"
-    # data_path = "Data/tDCS_EEG_data/"
+    data_path = "Data/tDCS_EEG_data/"
     subject_folders = os.listdir(data_path)
     txt_file_paths = []
 
@@ -116,41 +117,54 @@ def filter():
     )
     """
 
+    # Plot the raw signal
+    plt.figure("raw")
+    plt.plot(s1_eo1_data.iloc[:, 0], color=config.colors.dtu_red)
+    plt.title("Example of raw data: Eyes open pre-treatment")
+    plt.grid()
+
+    # Upper and lower bounds for bandpass filter
     low_freq = 0.5
-    high_freq = 70
-    # Create/view notch filter
+    high_freq = 50
+
+    # Create notch filter
     samp_freq = 500  # Sample frequency, given in data description (Hz)
     notch_freq = 50  # Frequency to be removed from signal (Hz)
     quality_factor = (high_freq - low_freq) / m.sqrt(low_freq * high_freq)
     b_notch, a_notch = signal.iirnotch(notch_freq, quality_factor, samp_freq)
+    # Outputs of signal.freqz below:
     freq, h = signal.freqz(b_notch, a_notch, fs=samp_freq)
 
-    plt.figure("filter")
-    plt.plot(freq, 20 * np.log10(abs(h)))
+    # Plot notch filter
+    # In the plot we transform h from complex numbers to dBs
+    plt.figure("notch filter")
+    plt.plot(freq, 20 * np.log10(abs(h)), color=config.colors.dtu_red)
     plt.title("Notch filter")
+    plt.xlabel("Frequency [Hz]")
+    plt.ylabel("Amplitude [dB]")
+    plt.grid()
 
-    y_notched = signal.filtfilt(b_notch, a_notch, s1_eo1_data.iloc[:, 0])
+    # Filter out the 50 Hz powerline interference
+    signal_notched = signal.filtfilt(b_notch, a_notch, s1_eo1_data.iloc[:, 0])
 
-    plt.figure("raw")
-    # plt.plot(s1_eo1_data.iloc[:,0])
-    plt.plot(y_notched)
-    plt.title("Example of raw data: Eyes open pre-treatment")
-    # plt.legend(labels=['Original', 'Notched'])
+    # Apply bandpass filter
+    signal_filtered = butter_bandpass_filter(
+        signal_notched, low_freq, high_freq, samp_freq
+    )  # , order=6)
 
-    y = butter_bandpass_filter(y_notched, low_freq, high_freq, samp_freq)  # , order=6)
-
+    # Plot the power spectral density of the raw, notched and filtered signals
     plt.figure("psd")
-    plt.psd(s1_eo1_data.iloc[:, 0], Fs=samp_freq)
-    plt.psd(y_notched, Fs=samp_freq)
-    plt.psd(y, Fs=samp_freq)
-    # plt.psd(s1_eo1_data.iloc[:,0])
-    # plt.psd(s2_eo1_data.iloc[:,0])
+    plt.psd(s1_eo1_data.iloc[:, 0], Fs=samp_freq, color=config.colors.dtu_red)
+    plt.psd(signal_notched, Fs=samp_freq, color=config.colors.black)
+    plt.psd(signal_filtered, Fs=samp_freq, color=config.colors.blue)
     plt.legend(labels=["Raw", "Notched", "Bandpass + notched"])
     plt.title("Power spectral density of example")
 
+    # Plot the original signal with the filters
     plt.figure("bandpass")
-    plt.plot(y)
+    plt.plot(signal_filtered, color=config.colors.dtu_red)
     plt.title("Example filtered")
+    plt.grid()
 
     plt.show()
 
