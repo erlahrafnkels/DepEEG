@@ -1,10 +1,12 @@
 import math as m
 import os
+import re
 import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.gridspec import GridSpec
 from omegaconf import OmegaConf
 from scipy import signal
 from scipy.stats import zscore
@@ -34,9 +36,10 @@ healthy = [
 depressed_active = ["S1", "S4", "S5", "S7", "S8", "S11", "S16", "S17", "S18", "S21", "S22", "S26", "S27"]
 depressed_sham = ["S31", "S33", "S35", "S36", "S37", "S40", "S41", "S43", "S44", "S45"]
 depressed = depressed_active + depressed_sham
-samp_freq = 500  # Sample frequency, given in data description (Hz)
 # fmt: on
+samp_freq = 500  # Sample frequency, given in data description (Hz)
 config = OmegaConf.load("config.yaml")
+color_codes = [i[1] for i in config.colors.items()]
 
 
 def get_files():
@@ -56,6 +59,34 @@ def get_files():
                     txt_file_paths.append(file_path)
 
     return txt_file_paths
+
+
+def update_filename(file):
+    filename = os.path.basename(file)[:-4]
+    subject = re.split("-|_", filename)[0]
+    pre_or_post = ""
+    open_or_closed = ""
+
+    # Pre or post?
+    if re.search("pre", filename, re.IGNORECASE):
+        pre_or_post = "pre"
+    elif re.search("post", filename, re.IGNORECASE):
+        pre_or_post = "post"
+    else:
+        print(filename, " - missing pre or post")
+
+    # Eyes open or closed?
+    if re.search("EO", filename, re.IGNORECASE):
+        open_or_closed = "EO"
+    elif re.search("EC", filename, re.IGNORECASE):
+        open_or_closed = "EC"
+    else:
+        print(filename, " - missing EO or EC")
+
+    # Updated filename
+    new_filename = subject + "_" + pre_or_post + "_" + open_or_closed + ".txt"
+
+    return new_filename
 
 
 def correct_refs(df):
@@ -84,8 +115,8 @@ def clean_data():
             df = df[df.columns.intersection(els_with_t3a2)]
             df = df[els_with_t3a2]
 
-        # Then, save in new file with _cleaned in "Data_cleaned" folder
-        filename = os.path.basename(file)[:-4] + "_cleaned.txt"
+        # Update filename and save
+        filename = update_filename(file)
         df.to_csv("Data/tDCS_EEG_data/Data_cleaned/" + filename, sep="\t", index=False)
 
     return
@@ -109,142 +140,154 @@ def butter_bandpass_filter(data, low_freq, high_freq, order=5):
     return y
 
 
-def filter_signal(record):
+"""
+def filter_record(record, low_freq, high_freq):
     # Read in data
     data_path = "Data/tDCS_EEG_data/Data_cleaned/"
     data = pd.read_csv(data_path + record, sep="\t", index_col=False)
-    datanp = data.to_numpy()
 
-    rows, cols = data.shape
-    print(rows)
-    print(cols)
+    # Convert from pandas dataframe to numpy array and make an empty array for filtered results
+    data = data.to_numpy()
+    data_filtered = np.zeros(data.shape)
 
-    datareshape = np.reshape(datanp, (1, -1))
-    print(datareshape.shape)
-    data2d = np.reshape(datareshape, (-1, cols))
+    # For each channel (column in array) apply filters, normalize and store in new filtered array
+    for col in range(data.shape[1]):
+        channel = data[:, col]
+        _, _, signal_notched = notch_filter(channel, low_freq, high_freq)
+        signal_filtered = butter_bandpass_filter(signal_notched, low_freq, high_freq)
+        sf_norm = zscore(signal_filtered)
+        data_filtered[:, col] = sf_norm
 
-    low_freq = 0.5
-    high_freq = 50
-
-    freq, h, signal_notched = notch_filter(datareshape, low_freq, high_freq)
-    signal_filtered = butter_bandpass_filter(signal_notched, low_freq, high_freq)
-
-    filtered2d = np.reshape(signal_filtered, (-1, cols))
-
-    plt.figure(1)
-    plt.plot(data)
-    plt.title("Dataframe")
-
-    plt.figure(2)
-    plt.plot(datanp)
-    plt.title("Numpy array")
-
-    plt.figure(3)
-    plt.plot(data2d)
-    plt.title("Numpy array reshaped")
-
-    plt.figure(4)
-    plt.plot(filtered2d)
-    plt.title("Numpy array reshaped filtered")
-
-    plt.show()
-
-    return
+    return data_filtered
+"""
 
 
-def filter_and_plot(record):
-    # Read in data
+def filter_record(record, low_freq, high_freq):
+    # Read in raw, cleaned data
     data_path = "Data/tDCS_EEG_data/Data_cleaned/"
     data = pd.read_csv(data_path + record, sep="\t", index_col=False)
-    # raw = data.iloc[:, 0] # Here we're only looking at the records of Fp1
 
-    datanp = data.to_numpy()
-    rows, cols = data.shape
-    datareshape = np.reshape(datanp, (1, -1))
+    # For each channel apply filters, normalize and replace data column values with new
+    for col in data.columns:
+        channel = data[col]
+        _, _, signal_notched = notch_filter(channel, low_freq, high_freq)
+        signal_filtered = butter_bandpass_filter(signal_notched, low_freq, high_freq)
+        sf_norm = zscore(signal_filtered)
+        data[col] = sf_norm
 
-    # Upper and lower bounds for bandpass filter
-    low_freq = 0.5
-    high_freq = 50
+    return data
+
+
+def plot_example_process(record, low_freq, high_freq):
+    # Read in raw, cleaned data
+    data_path = "Data/tDCS_EEG_data/Data_cleaned/"
+    data = pd.read_csv(data_path + record, sep="\t", index_col=False)
+    raw = data.iloc[:, 0]  # Here we're only looking at the records of Fp1
 
     # Filter out the 50 Hz powerline interference
-    freq, h, signal_notched = notch_filter(datareshape, low_freq, high_freq)
+    freq, h, signal_notched = notch_filter(raw, low_freq, high_freq)
 
     # Apply bandpass filter
     signal_filtered = butter_bandpass_filter(signal_notched, low_freq, high_freq)
+    sf_norm = zscore(signal_filtered)
+    print(sf_norm.mean())
+    print(sf_norm.std())
 
-    signal_notched = np.reshape(signal_notched, (-1, cols))
-    signal_filtered = np.reshape(signal_filtered, (-1, cols))
+    # Set up x-axis in time domain
+    points = raw.shape[0]
+    x = np.linspace(0, points / samp_freq, points)
 
     # Make one big plot
-    fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(12, 8))
+    fig = plt.figure(figsize=(14, 10))
+    gs = GridSpec(3, 2, figure=fig)
+    ax1 = fig.add_subplot(gs[0, 0])
+    ax2 = fig.add_subplot(gs[0, 1])
+    ax3 = fig.add_subplot(gs[1, 0])
+    ax4 = fig.add_subplot(gs[1, 1])
+    ax5 = fig.add_subplot(gs[2, :])
 
     # Raw signal
-    axs[0, 0].plot(datanp[:, 0], color=config.colors.dtu_red)
-    axs[0, 0].set_title("Raw data")
-    axs[0, 0].grid()
+    ax1.plot(x, raw, color=config.colors.dtu_red)
+    ax1.set_title("Raw signal")
+    ax1.set_xlabel("Time [s]")
+    ax1.grid()
 
     # Notch filter
     # In the plot we transform h from complex numbers to dBs
-    axs[0, 1].plot(freq, 20 * np.log10(abs(h)), color=config.colors.dtu_red)
-    axs[0, 1].set_title("Notch filter")
-    axs[0, 1].set_xlabel("Frequency [Hz]")
-    axs[0, 1].set_ylabel("Amplitude [dB]")
-    axs[0, 1].grid()
+    ax2.plot(freq, 20 * np.log10(abs(h)), color=config.colors.dtu_red)
+    ax2.set_title("Notch filter")
+    ax2.set_xlabel("Frequency [Hz]")
+    ax2.set_ylabel("Amplitude [dB]")
+    ax2.grid()
 
     # Power spectral density of the raw, notched and filtered signals
-    axs[1, 0].psd(datanp[:, 0], Fs=samp_freq, color=config.colors.dtu_red)
-    axs[1, 0].psd(signal_notched[:, 0], Fs=samp_freq, color=config.colors.black)
-    axs[1, 0].psd(signal_filtered[:, 0], Fs=samp_freq, color=config.colors.blue)
-    axs[1, 0].legend(labels=["Raw", "Notched", "Bandpass + notched"])
-    axs[1, 0].set_title("Power spectral density")
+    ax3.psd(raw, Fs=samp_freq, color=config.colors.dtu_red)
+    ax3.psd(signal_notched, Fs=samp_freq, color=config.colors.black)
+    ax3.psd(signal_filtered, Fs=samp_freq, color=config.colors.blue)
+    ax3.legend(labels=["Raw", "Notched", "Bandpass + notched"])
+    ax3.set_title("Power spectral density")
 
     # Original signal with the filters
-    axs[1, 1].plot(signal_filtered[:, 0], color=config.colors.dtu_red)
-    axs[1, 1].set_title("Data filtered")
-    axs[1, 1].grid()
+    ax4.plot(x, signal_filtered, color=config.colors.dtu_red)
+    ax4.set_title("Data filtered")
+    ax4.set_xlabel("Time [s]")
+    ax4.grid()
 
-    fig.suptitle(record[:-4])
+    # Original signal with the filters and normalized
+    ax5.plot(x, sf_norm, color=config.colors.dtu_red)
+    ax5.set_title("Data filtered and normalized")
+    ax5.set_xlabel("Time [s]")
+    ax5.grid()
+
+    fig.suptitle(record[:-4], fontsize="xx-large")
     fig.tight_layout()
 
-    # Now, normalize data with mean = 0 and std = 1
-    # Find one mean and std for all channels and the whole 2 minute recording
-    print("SIGNAL RAW SHAPE:", datanp.shape)
-    print("SIGNAL RAW MEAN:", datanp.mean())
-    print("SIGNAL RAW STD:", datanp.std())
+    return fig
 
-    print("SIGNAL FILTERED SHAPE:", signal_filtered.shape)
-    print("SIGNAL FILTERED MEAN:", signal_filtered.mean())
-    print("SIGNAL FILTERED STD:", signal_filtered.std())
 
-    data_norm = zscore(signal_filtered, axis=None)
-    print("DATA NORM SHAPE:", data_norm.shape)
-    print("DATA NORM MEAN:", data_norm.mean())
-    print("DATA NORM STD:", data_norm.std())
-    print()
-    print("Normalized, mean of first row:", data_norm[0, :].mean())
-    print()
-    print()
+def plot_record(record, filename):
+    channels = record.shape[1]
+    points = record.shape[0]
+    x = np.linspace(0, points / samp_freq, points)
 
-    mean = data.stack().mean()
-    std = data.stack().std()
-    data_norm2 = (data - mean) / std
-
-    print("DATA NORM 2 MEAN:", data_norm2.mean())
-    print("DATA NORM 2 STD:", data_norm2.std())
-    print()
-    print("Normalized 2, mean of first row:", data_norm2[0, :].mean())
-
-    # Convert recordings to time in seconds
-    # time_axis = range(0, m.floor(data.shape[0] / samp_freq))
-
+    """
     # Plot all channels
-    fig2, axs2 = plt.subplots(nrows=31, ncols=1, sharex=True, figsize=(12, 8))
-    for i in range(0, 31):
-        axs2[i].plot(signal_filtered[:, i])
-        # axs2[i].set_xticks(time_axis)
-        axs2[i].set_frame_on(False)
+    fig1, axs = plt.subplots(nrows=channels, ncols=1, sharex=True, figsize=(12, 8))
+    color = 0
+    for i in range(0, channels):
+        if color == len(color_codes):
+            color = 0
+        axs[i].plot(x, record.iloc[:, i], color=color_codes[color])
+        axs[i].set_yticks([])
+        axs[i].set_ylabel(record.columns[i], fontsize="x-small", rotation=0, va="center")
+        axs[i].set_frame_on(False)
+        color += 1
 
-    return fig, fig2
+    fig1.suptitle(filename[:-4])#, fontsize="x-large")
+    fig1.tight_layout()
+    plt.xlabel("Time [s]")
+    """
+
+    fig = plt.figure(figsize=(12, 8))
+    color = 0
+
+    for i in range(0, channels):
+        y = i * 20  # Placement of signal on y-axis
+        if color == len(color_codes):
+            color = 0
+        plt.plot(x, record.iloc[:, i] - y, color=color_codes[color])
+        plt.text(-1, -y - 3, record.columns[i], fontsize="small", ha="right")
+        color += 1
+
+    plt.title(filename[:-4], fontsize="x-large")
+    plt.xlabel("Time [s]")
+    plt.yticks([])
+    # plt.legend(record.columns, fontsize="small", loc="center right", bbox_to_anchor=(1.05, 0.5))
+    plt.box(False)
+    plt.grid(color="#D6D6D6")
+    fig.tight_layout()
+
+    return fig
 
 
 if __name__ == "__main__":
@@ -252,13 +295,13 @@ if __name__ == "__main__":
     if not os.listdir("Data/tDCS_EEG_data/Data_cleaned/"):
         clean_data()
         print("Cleaned files saved.")
-    else:
-        print("Cleaned files in folder.")
 
-    fig1, fig2 = filter_and_plot("S1-Pre-EC1_EEG_cleaned.txt")
-    # fig2 = filter_and_plot("S1-post_EC1_EEG_cleaned.txt")
-    # fig3 = filter_and_plot("S42_pre_EC1_cleaned.txt")
-    # fig4 = filter_and_plot("S42_EC1Post_EEG_cleaned.txt")
+    # fig1 = plot_example_process("S32_H_pre_EC.txt", 0.5, 50)
+    # fig1 = plot_example_process("S32_H_post_EC.txt", 0.5, 50)
+    # plt.show()
+    # filter_record("S1-Pre-EC1_EEG_cleaned.txt", 0.5, 50)
+
+    record_name = "S15_post_EO.txt"
+    record_filtered = filter_record(record_name, 0.5, 50)
+    fig1 = plot_record(record_filtered, record_name)
     plt.show()
-
-    # filter_signal("S1-Pre-EC1_EEG_cleaned.txt")
