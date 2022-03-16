@@ -39,7 +39,7 @@ depressed = depressed_active + depressed_sham
 # fmt: on
 samp_freq = 500  # Sample frequency, given in data description (Hz)
 config = OmegaConf.load("config.yaml")
-color_codes = [i[1] for i in config.colors.items()]
+color_codes = [c[1] for c in config.colors.items()]
 
 
 def get_files():
@@ -140,28 +140,6 @@ def butter_bandpass_filter(data, low_freq, high_freq, order=5):
     return y
 
 
-"""
-def filter_record(record, low_freq, high_freq):
-    # Read in data
-    data_path = "Data/tDCS_EEG_data/Data_cleaned/"
-    data = pd.read_csv(data_path + record, sep="\t", index_col=False)
-
-    # Convert from pandas dataframe to numpy array and make an empty array for filtered results
-    data = data.to_numpy()
-    data_filtered = np.zeros(data.shape)
-
-    # For each channel (column in array) apply filters, normalize and store in new filtered array
-    for col in range(data.shape[1]):
-        channel = data[:, col]
-        _, _, signal_notched = notch_filter(channel, low_freq, high_freq)
-        signal_filtered = butter_bandpass_filter(signal_notched, low_freq, high_freq)
-        sf_norm = zscore(signal_filtered)
-        data_filtered[:, col] = sf_norm
-
-    return data_filtered
-"""
-
-
 def filter_record(record, low_freq, high_freq):
     # Read in raw, cleaned data
     data_path = "Data/tDCS_EEG_data/Data_cleaned/"
@@ -178,10 +156,35 @@ def filter_record(record, low_freq, high_freq):
     return data
 
 
-def plot_example_process(record, low_freq, high_freq):
+def make_plot_title(filename):
+    name_split = filename[:-4].split("_")
+    subject = name_split[0]
+    pre_or_post = name_split[1]
+    open_or_closed = name_split[2]
+    h_or_d = ""
+
+    if subject in healthy:
+        h_or_d = "Healthy"
+    else:
+        h_or_d = "Depressed"
+    if pre_or_post == "pre":
+        pre_or_post = ", pretreatment"
+    else:
+        pre_or_post = ", posttreatment"
+    if open_or_closed == "EO":
+        open_or_closed = ", eyes open"
+    else:
+        open_or_closed = ", eyes closed"
+
+    plot_title = subject + ": " + h_or_d + pre_or_post + open_or_closed
+
+    return plot_title
+
+
+def plot_example_process(filename, low_freq, high_freq):
     # Read in raw, cleaned data
     data_path = "Data/tDCS_EEG_data/Data_cleaned/"
-    data = pd.read_csv(data_path + record, sep="\t", index_col=False)
+    data = pd.read_csv(data_path + filename, sep="\t", index_col=False)
     raw = data.iloc[:, 0]  # Here we're only looking at the records of Fp1
 
     # Filter out the 50 Hz powerline interference
@@ -239,50 +242,33 @@ def plot_example_process(record, low_freq, high_freq):
     ax5.set_xlabel("Time [s]")
     ax5.grid()
 
-    fig.suptitle(record[:-4], fontsize="xx-large")
+    fig.suptitle(make_plot_title(filename), fontsize="xx-large")
     fig.tight_layout()
 
     return fig
 
 
 def plot_record(record, filename):
+    # Set up x-axis in time domain
     channels = record.shape[1]
-    points = record.shape[0]
-    x = np.linspace(0, points / samp_freq, points)
+    datapoints = record.shape[0]
+    x = np.linspace(0, datapoints / samp_freq, datapoints)
 
-    """
-    # Plot all channels
-    fig1, axs = plt.subplots(nrows=channels, ncols=1, sharex=True, figsize=(12, 8))
-    color = 0
-    for i in range(0, channels):
-        if color == len(color_codes):
-            color = 0
-        axs[i].plot(x, record.iloc[:, i], color=color_codes[color])
-        axs[i].set_yticks([])
-        axs[i].set_ylabel(record.columns[i], fontsize="x-small", rotation=0, va="center")
-        axs[i].set_frame_on(False)
-        color += 1
-
-    fig1.suptitle(filename[:-4])#, fontsize="x-large")
-    fig1.tight_layout()
-    plt.xlabel("Time [s]")
-    """
-
+    # Compose plot
     fig = plt.figure(figsize=(12, 8))
     color = 0
 
     for i in range(0, channels):
-        y = i * 20  # Placement of signal on y-axis
+        y = i * 20  # Placement of signal on y-axis, stack channels one after the other
         if color == len(color_codes):
             color = 0
         plt.plot(x, record.iloc[:, i] - y, color=color_codes[color])
         plt.text(-1, -y - 3, record.columns[i], fontsize="small", ha="right")
         color += 1
 
-    plt.title(filename[:-4], fontsize="x-large")
+    plt.title(make_plot_title(filename), fontsize="x-large")
     plt.xlabel("Time [s]")
     plt.yticks([])
-    # plt.legend(record.columns, fontsize="small", loc="center right", bbox_to_anchor=(1.05, 0.5))
     plt.box(False)
     plt.grid(color="#D6D6D6")
     fig.tight_layout()
@@ -296,12 +282,19 @@ if __name__ == "__main__":
         clean_data()
         print("Cleaned files saved.")
 
-    # fig1 = plot_example_process("S32_H_pre_EC.txt", 0.5, 50)
+    fig1 = plot_example_process("S32_pre_EC.txt", 0.5, 50)
     # fig1 = plot_example_process("S32_H_post_EC.txt", 0.5, 50)
     # plt.show()
     # filter_record("S1-Pre-EC1_EEG_cleaned.txt", 0.5, 50)
 
-    record_name = "S15_post_EO.txt"
-    record_filtered = filter_record(record_name, 0.5, 50)
-    fig1 = plot_record(record_filtered, record_name)
+    record_names = [
+        "S22_pre_EO.txt",
+        "S22_pre_EC.txt",
+        "S22_post_EO.txt",
+        "S22_post_EC.txt",
+    ]
+    figs = []
+    for name in record_names:
+        record_filtered = filter_record(name, 0.5, 50)
+        figs.append(plot_record(record_filtered, name))
     plt.show()
