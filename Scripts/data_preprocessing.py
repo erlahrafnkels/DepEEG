@@ -2,6 +2,7 @@ import math as m
 import os
 import re
 import warnings
+from sys import platform
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -41,13 +42,20 @@ samp_freq = 500  # Sample frequency, given in data description (Hz)
 config = OmegaConf.load("config.yaml")
 color_codes = [c[1] for c in config.colors.items()]
 
+# Get root folder based on which operating system I'm working on (needed for mac)
+root = ""
+if platform == "darwin":
+    root = "/Users/erlahrafnkelsdottir/Documents/DepEEG/"
+
 
 def get_files():
-    data_path = "Data/tDCS_EEG_data/"
+    data_path = root + "Data/tDCS_EEG_data/"
     subject_folders = os.listdir(data_path)
     txt_file_paths = []
 
     for subject in subject_folders:
+        if subject == ".DS_Store":  # This file keeps creeping in, skip it
+            continue
         path = data_path + subject
         subfolders = os.listdir(path)
         for p_folders in subfolders:
@@ -117,7 +125,7 @@ def clean_data():
 
         # Update filename and save
         filename = update_filename(file)
-        df.to_csv("Data/tDCS_EEG_data/Data_cleaned/" + filename, sep="\t", index=False)
+        df.to_csv(root + "Data/tDCS_EEG_data/Data_cleaned/" + filename, sep="\t", index=False)
 
     return
 
@@ -142,7 +150,7 @@ def butter_bandpass_filter(data, low_freq, high_freq, order=5):
 
 def filter_record(record, low_freq, high_freq):
     # Read in raw, cleaned data
-    data_path = "Data/tDCS_EEG_data/Data_cleaned/"
+    data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
     data = pd.read_csv(data_path + record, sep="\t", index_col=False)
 
     # For each channel apply filters, normalize and replace data column values with new
@@ -183,7 +191,7 @@ def make_plot_title(filename):
 
 def plot_example_process(filename, low_freq, high_freq):
     # Read in raw, cleaned data
-    data_path = "Data/tDCS_EEG_data/Data_cleaned/"
+    data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
     data = pd.read_csv(data_path + filename, sep="\t", index_col=False)
     raw = data.iloc[:, 0]  # Here we're only looking at the records of Fp1
 
@@ -193,8 +201,6 @@ def plot_example_process(filename, low_freq, high_freq):
     # Apply bandpass filter
     signal_filtered = butter_bandpass_filter(signal_notched, low_freq, high_freq)
     sf_norm = zscore(signal_filtered)
-    print(sf_norm.mean())
-    print(sf_norm.std())
 
     # Set up x-axis in time domain
     points = raw.shape[0]
@@ -277,8 +283,8 @@ def plot_record(record, filename):
 
 
 if __name__ == "__main__":
-    # We don't want to run if we have already made the cleaned files
-    if not os.listdir("Data/tDCS_EEG_data/Data_cleaned/"):
+    # Run this if we have don't have the cleaned files
+    if not os.listdir(root + "Data/tDCS_EEG_data/Data_cleaned/"):
         clean_data()
         print("Cleaned files saved.")
 
