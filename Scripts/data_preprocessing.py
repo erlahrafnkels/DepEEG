@@ -48,7 +48,7 @@ if platform == "darwin":
     root = "/Users/erlahrafnkelsdottir/Documents/DepEEG/"
 
 
-def get_files():
+def get_files() -> list:
     data_path = root + "Data/tDCS_EEG_data/"
     subject_folders = os.listdir(data_path)
     txt_file_paths = []
@@ -69,7 +69,7 @@ def get_files():
     return txt_file_paths
 
 
-def update_filename(file):
+def update_filename(file: str) -> str:
     filename = os.path.basename(file)[:-4]
     subject = re.split("-|_", filename)[0]
     pre_or_post = ""
@@ -97,7 +97,7 @@ def update_filename(file):
     return new_filename
 
 
-def correct_refs(df):
+def correct_refs(df: pd.DataFrame) -> pd.DataFrame:
     df.update(df[A1ref].sub(df["A1"], axis=0))
     df.columns = [x + "-A1" if x in A1ref else x for x in df]
     df.update(df[A2ref].sub(df["A2"], axis=0))
@@ -125,12 +125,16 @@ def clean_data():
 
         # Update filename and save
         filename = update_filename(file)
-        df.to_csv(root + "Data/tDCS_EEG_data/Data_cleaned/" + filename, sep="\t", index=False)
+        df.to_csv(
+            root + "Data/tDCS_EEG_data/Data_cleaned/" + filename, sep="\t", index=False
+        )
 
     return
 
 
-def notch_filter(data, low_freq, high_freq):
+def notch_filter(
+    data: pd.DataFrame, low_freq: float, high_freq: float
+) -> list[float, float, np.ndarray]:
     notch_freq = 50  # Frequency to be removed from signal (Hz)
     quality_factor = (high_freq - low_freq) / m.sqrt(low_freq * high_freq)
     b_notch, a_notch = signal.iirnotch(notch_freq, quality_factor, samp_freq)
@@ -139,7 +143,9 @@ def notch_filter(data, low_freq, high_freq):
     return freq, h, signal_notched
 
 
-def butter_bandpass_filter(data, low_freq, high_freq, order=5):
+def butter_bandpass_filter(
+    data: np.ndarray, low_freq: float, high_freq: float, order: int = 5
+) -> np.ndarray:
     nyq = 0.5 * samp_freq
     low = low_freq / nyq
     high = high_freq / nyq
@@ -148,7 +154,45 @@ def butter_bandpass_filter(data, low_freq, high_freq, order=5):
     return y
 
 
-def filter_record(record, low_freq, high_freq):
+def remove_eye_blinks(record: pd.DataFrame, filename: str):  # -> pd.DataFrame:
+    # np.polyfit(x, y, deg)
+
+    # Set up x-axis in time domain
+    points = record.shape[0]
+    x = np.linspace(0, points / samp_freq, points)
+
+    chanFp1 = record["Fp1-A1"]
+
+    max_peak = chanFp1.max()
+    max_pos = chanFp1.idxmax()
+    det_window = [0.25 * max_peak, max_peak]
+
+    start_points = []
+    temp = 0
+    for idx, p in chanFp1.iteritems():
+        if p >= det_window[0]:
+            if temp == 0:
+                start_points.append((idx / samp_freq, p))
+                temp = 1
+        else:
+            temp = 0
+
+    print("Number of blinks detected: ", len(start_points))
+
+    fig = plt.figure(figsize=(14, 6))
+    plt.axhline(y=0, color="black")
+    plt.plot(x, chanFp1)
+    plt.plot(max_pos / samp_freq, max_peak, marker="o", color="r")
+    plt.axhline(y=det_window[0], color="r")
+    for p in start_points:
+        plt.plot(p[0], p[1], marker="o", color="g")
+    # plt.axhline(y=det_window[1], color="r")
+    plt.title(make_plot_title(filename), fontsize="x-large")
+
+    return fig
+
+
+def filter_record(record: str, low_freq: float, high_freq: float) -> pd.DataFrame:
     # Read in raw, cleaned data
     data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
     data = pd.read_csv(data_path + record, sep="\t", index_col=False)
@@ -161,10 +205,14 @@ def filter_record(record, low_freq, high_freq):
         sf_norm = zscore(signal_filtered)
         data[col] = sf_norm
 
+    if "EO" in record:
+        remove_eye_blinks(data, record)  # Produces a figure
+        plt.show()
+
     return data
 
 
-def make_plot_title(filename):
+def make_plot_title(filename: str) -> str:
     name_split = filename[:-4].split("_")
     subject = name_split[0]
     pre_or_post = name_split[1]
@@ -189,7 +237,9 @@ def make_plot_title(filename):
     return plot_title
 
 
-def plot_example_process(filename, low_freq, high_freq):
+def plot_example_process(
+    filename: str, low_freq: float, high_freq: float
+) -> plt.figure:
     # Read in raw, cleaned data
     data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
     data = pd.read_csv(data_path + filename, sep="\t", index_col=False)
@@ -254,7 +304,7 @@ def plot_example_process(filename, low_freq, high_freq):
     return fig
 
 
-def plot_record(record, filename):
+def plot_record(record: pd.DataFrame, filename: str) -> plt.figure:
     # Set up x-axis in time domain
     channels = record.shape[1]
     datapoints = record.shape[0]
@@ -288,19 +338,31 @@ if __name__ == "__main__":
         clean_data()
         print("Cleaned files saved.")
 
-    fig1 = plot_example_process("S32_pre_EC.txt", 0.5, 50)
+    # fig1 = plot_example_process("S32_pre_EC.txt", 0.5, 50)
     # fig1 = plot_example_process("S32_H_post_EC.txt", 0.5, 50)
     # plt.show()
     # filter_record("S1-Pre-EC1_EEG_cleaned.txt", 0.5, 50)
 
+    # Example of bad: 36, 12
+    subject_no = 12
+
     record_names = [
-        "S22_pre_EO.txt",
-        "S22_pre_EC.txt",
-        "S22_post_EO.txt",
-        "S22_post_EC.txt",
+        "S" + str(subject_no) + "_pre_EO.txt",
+        "S" + str(subject_no) + "_pre_EC.txt",
+        "S" + str(subject_no) + "_post_EO.txt",
+        "S" + str(subject_no) + "_post_EC.txt",
     ]
     figs = []
+    records = []
     for name in record_names:
         record_filtered = filter_record(name, 0.5, 50)
-        figs.append(plot_record(record_filtered, name))
-    plt.show()
+        records.append(record_filtered)
+        # figs.append(plot_record(record_filtered, name))
+
+    # rec1 = records[0]
+    # channel1 = rec1.iloc[:, 0]
+    # plt.figure("1channel")
+    # figchan = plt.plot(channel1)
+    # figs.append(figchan)
+
+    # plt.show()
