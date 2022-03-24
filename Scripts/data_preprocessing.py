@@ -12,7 +12,21 @@ from omegaconf import OmegaConf
 from scipy import signal
 from scipy.stats import zscore
 
+# from sklearn.decomposition import FastICA
+
 warnings.filterwarnings("ignore")
+
+
+"""
+ABOUT THIS SCRIPT ....
+....
+....
+
+Obs: I added input and output types to all of the functions, even though it doesn't change anything in how the
+function is read and executed. It was merely a way for me to remember and easily see the types; i.e. whether
+I had a pandas dataframe or a numpy array, for example.
+
+"""
 
 
 # Global variables
@@ -205,9 +219,9 @@ def filter_record(record: str, low_freq: float, high_freq: float) -> pd.DataFram
         sf_norm = zscore(signal_filtered)
         data[col] = sf_norm
 
-    if "EO" in record:
-        remove_eye_blinks(data, record)  # Produces a figure
-        plt.show()
+    # if "EO" in record:
+    #    remove_eye_blinks(data, record)  # Produces a figure
+    #    plt.show()
 
     return data
 
@@ -357,7 +371,7 @@ if __name__ == "__main__":
     for name in record_names:
         record_filtered = filter_record(name, 0.5, 50)
         records.append(record_filtered)
-        # figs.append(plot_record(record_filtered, name))
+        figs.append(plot_record(record_filtered, name))
 
     # rec1 = records[0]
     # channel1 = rec1.iloc[:, 0]
@@ -365,4 +379,4 @@ if __name__ == "__main__":
     # figchan = plt.plot(channel1)
     # figs.append(figchan)
 
-    # plt.show()
+    plt.show()
