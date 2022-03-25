@@ -5,14 +5,14 @@ import warnings
 from sys import platform
 
 import matplotlib.pyplot as plt
+import mne
 import numpy as np
 import pandas as pd
 from matplotlib.gridspec import GridSpec
 from omegaconf import OmegaConf
 from scipy import signal
 from scipy.stats import zscore
-
-# from sklearn.decomposition import FastICA
+from sklearn.decomposition import FastICA
 
 warnings.filterwarnings("ignore")
 
@@ -206,10 +206,10 @@ def remove_eye_blinks(record: pd.DataFrame, filename: str):  # -> pd.DataFrame:
     return fig
 
 
-def filter_record(record: str, low_freq: float, high_freq: float) -> pd.DataFrame:
+def filter_record(filename: str, low_freq: float, high_freq: float) -> pd.DataFrame:
     # Read in raw, cleaned data
     data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
-    data = pd.read_csv(data_path + record, sep="\t", index_col=False)
+    data = pd.read_csv(data_path + filename, sep="\t", index_col=False)
 
     # For each channel apply filters, normalize and replace data column values with new
     for col in data.columns:
@@ -219,11 +219,50 @@ def filter_record(record: str, low_freq: float, high_freq: float) -> pd.DataFram
         sf_norm = zscore(signal_filtered)
         data[col] = sf_norm
 
-    # if "EO" in record:
-    #    remove_eye_blinks(data, record)  # Produces a figure
+    # if "EO" in filename:
+    #    remove_eye_blinks(data, filename)  # Produces a figure
     #    plt.show()
 
     return data
+
+
+def perform_ICA(record: pd.DataFrame) -> list[pd.DataFrame, pd.DataFrame]:
+    ica = FastICA(random_state=42)
+    comps_ = ica.fit_transform(record)  # Reconstruct signals (type: np.ndarray)
+    mixing_ = ica.mixing_  # Get estimated mixing matrix (type: np.ndarray)
+
+    # Convert from numpy array to pandas dataframe
+    comps = pd.DataFrame(comps_)
+    mixing = pd.DataFrame(mixing_)
+
+    # plt.figure("rec")
+    # plt.plot(record)
+    # for i in range(S.shape[1]):
+    #     plt.figure(i)
+    #     plt.plot(S.iloc[i,:])
+    # plt.show()
+
+    return comps, mixing
+
+
+def mne_top(record: pd.DataFrame):
+    channels = record.columns.to_list()
+    info = mne.create_info(ch_names=channels, sfreq=samp_freq, ch_types="eeg")
+    data = mne.io.RawArray(record.T, info)
+    # data.plot(duration=5, n_channels=len(channels))
+
+    print(channels[0:5])
+    print(data.info)
+    print(data.pick_channels())
+
+    ev_data = data[0, :]
+    print(len(ev_data))
+    ev_info = mne.create_info(ch_names=channels[0:5], sfreq=samp_freq, ch_types="eeg")
+    evoked = mne.EvokedArray(ev_data, ev_info)
+    mne.viz.plot_topomap(evoked.data, evoked.info)
+    plt.show()
+
+    return
 
 
 def make_plot_title(filename: str) -> str:
@@ -329,11 +368,16 @@ def plot_record(record: pd.DataFrame, filename: str) -> plt.figure:
     color = 0
 
     for i in range(0, channels):
-        y = i * 20  # Placement of signal on y-axis, stack channels one after the other
+        if "ICA" in filename:
+            y = i / 10
+        else:
+            y = (
+                i * 20
+            )  # Placement of signal on y-axis, stack channels one after the other
+            plt.text(-1, -y - 3, record.columns[i], fontsize="small", ha="right")
         if color == len(color_codes):
             color = 0
         plt.plot(x, record.iloc[:, i] - y, color=color_codes[color])
-        plt.text(-1, -y - 3, record.columns[i], fontsize="small", ha="right")
         color += 1
 
     plt.title(make_plot_title(filename), fontsize="x-large")
@@ -371,12 +415,23 @@ if __name__ == "__main__":
     for name in record_names:
         record_filtered = filter_record(name, 0.5, 50)
         records.append(record_filtered)
-        figs.append(plot_record(record_filtered, name))
+        # figs.append(plot_record(record_filtered, name))
 
-    # rec1 = records[0]
+    rec1 = records[0]
     # channel1 = rec1.iloc[:, 0]
     # plt.figure("1channel")
     # figchan = plt.plot(channel1)
     # figs.append(figchan)
 
-    plt.show()
+    # plt.show()
+
+    # recs_for_ica = records[0].iloc[:, 0:3]
+
+    # comps, mixing = perform_ICA(recs_for_ica)
+
+    # plot_record(recs_for_ica, record_names[0])
+    # plot_record(comps, "ICA - "+ record_names[0])
+
+    # plt.show()
+
+    mne_top(rec1)
