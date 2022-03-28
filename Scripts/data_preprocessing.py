@@ -175,15 +175,15 @@ def remove_eye_blinks(record: pd.DataFrame, filename: str):  # -> pd.DataFrame:
     points = record.shape[0]
     x = np.linspace(0, points / samp_freq, points)
 
-    chanFp1 = record["Fp1-A1"]
+    chanFpz = record["Fpz-A1"]
 
-    max_peak = chanFp1.max()
-    max_pos = chanFp1.idxmax()
+    max_peak = chanFpz.max()
+    max_pos = chanFpz.idxmax()
     det_window = [0.25 * max_peak, max_peak]
 
     start_points = []
     temp = 0
-    for idx, p in chanFp1.iteritems():
+    for idx, p in chanFpz.iteritems():
         if p >= det_window[0]:
             if temp == 0:
                 start_points.append((idx / samp_freq, p))
@@ -195,7 +195,7 @@ def remove_eye_blinks(record: pd.DataFrame, filename: str):  # -> pd.DataFrame:
 
     fig = plt.figure(figsize=(14, 6))
     plt.axhline(y=0, color="black")
-    plt.plot(x, chanFp1)
+    plt.plot(x, chanFpz)
     plt.plot(max_pos / samp_freq, max_peak, marker="o", color="r")
     plt.axhline(y=det_window[0], color="r")
     for p in start_points:
@@ -243,6 +243,52 @@ def perform_ICA(record: pd.DataFrame) -> list[pd.DataFrame, pd.DataFrame]:
     # plt.show()
 
     return comps, mixing
+
+
+def find_eye_blinks(record: pd.DataFrame, ica, filename: str):  # -> pd.DataFrame:
+    lower_ratio = 0.3
+
+    # ----------------------------- FILTERED RECORD -----------------------------
+    chanFpz = record["Fpz-A1"]
+    max_peak = chanFpz.max()
+    det_window = [lower_ratio * max_peak, max_peak]
+
+    start_points = []
+    temp = 0
+    for idx, p in chanFpz.iteritems():
+        if p >= det_window[0]:
+            if temp == 0:
+                start_points.append((idx / samp_freq, p))
+                temp = 1
+        else:
+            temp = 0
+
+    print("Number of blinks detected in record: ", len(start_points))
+
+    # ----------------------------- ICA OF RECORD -----------------------------
+    comps = ica.shape[1]
+    points_per_comp = []
+
+    for c in range(comps):
+        comp = abs(ica.iloc[:, c])
+        max_peak = comp.max()
+        det_window = [lower_ratio * max_peak, max_peak]
+
+        start_points = []
+        temp = 0
+        for idx, p in comp.iteritems():
+            if p >= det_window[0]:
+                if temp == 0:
+                    start_points.append((idx / samp_freq, p))
+                    temp = 1
+            else:
+                temp = 0
+
+        points_per_comp.append(len(start_points))
+
+    print(points_per_comp)
+
+    return
 
 
 def mne_top(record: pd.DataFrame):
@@ -417,7 +463,6 @@ if __name__ == "__main__":
         records.append(record_filtered)
         # figs.append(plot_record(record_filtered, name))
 
-    rec1 = records[0]
     # channel1 = rec1.iloc[:, 0]
     # plt.figure("1channel")
     # figchan = plt.plot(channel1)
@@ -425,13 +470,62 @@ if __name__ == "__main__":
 
     # plt.show()
 
-    # recs_for_ica = records[0].iloc[:, 0:3]
+    """ for i in range(2, 4):
+        rec_name = "S" + str(i) + "_pre_EO.txt"
+        try:
+            rec = filter_record(rec_name, 0.5, 50)
+        except:
+            continue
+        comps, mixing = perform_ICA(rec)
+        plot_record(rec, rec_name)
+        plot_record(comps, "ICA - "+ rec_name)
+        print("Comps shape: ", comps.shape)
+        print("Comps type: ", type(comps))
+        plt.show()
 
-    # comps, mixing = perform_ICA(recs_for_ica)
+    rec_for_ica = records[0]
 
-    # plot_record(recs_for_ica, record_names[0])
-    # plot_record(comps, "ICA - "+ record_names[0])
+    comps, mixing = perform_ICA(rec_for_ica)
+    plot_record(rec_for_ica, record_names[0])
+    plot_record(comps, "ICA - "+ record_names[0])
 
-    # plt.show()
+    plt.show()
 
-    mne_top(rec1)
+    rec1 = records[0]
+    mne_top(rec1) """
+
+    rec_for_ica = records[0]
+    comps, mixing = perform_ICA(rec_for_ica)
+    # find_eye_blinks(rec_for_ica, comps, record_names[0])
+
+    print(rec_for_ica.shape)
+    print(comps.shape)
+    print(mixing.shape)
+    print()
+    print("----------------------- RECORD -----------------------")
+    # print(rec_for_ica)
+    print()
+    print("----------------------- MIXING -----------------------")
+    # print(mixing)
+    print()
+    print(rec_for_ica.shape, " dot ", mixing.shape, " equals:")
+    rec_np = rec_for_ica.to_numpy()
+    mix_np = mixing.to_numpy()
+    print(rec_np.shape)
+    print(mix_np.shape)
+    multip = rec_np.dot(mix_np)
+    print(multip.shape)
+    # print(rec_for_ica.dot(mixing))
+    multip = pd.DataFrame(multip)
+    print()
+    print("DIFFERENCE BETWEEN COMPS AND MULTIP:")
+    diff = comps - multip
+    print(max(diff))
+    print(min(diff))
+    print(diff)
+
+    plot_record(rec_for_ica, record_names[0])
+    plot_record(comps, "ICA - " + record_names[0])
+    plot_record(multip, "MULTIPLY - " + record_names[0])
+
+    plt.show()
