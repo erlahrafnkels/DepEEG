@@ -131,6 +131,9 @@ dmypy.json
 # Data folder
 Data/*
 
+# Images folder, for now
+Images/*
+
 # Powershell stuff
 Microsoft/*
 

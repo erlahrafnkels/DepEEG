@@ -168,44 +168,6 @@ def butter_bandpass_filter(
     return y
 
 
-def remove_eye_blinks(record: pd.DataFrame, filename: str):  # -> pd.DataFrame:
-    # np.polyfit(x, y, deg)
-
-    # Set up x-axis in time domain
-    points = record.shape[0]
-    x = np.linspace(0, points / samp_freq, points)
-
-    chanFpz = record["Fpz-A1"]
-
-    max_peak = chanFpz.max()
-    max_pos = chanFpz.idxmax()
-    det_window = [0.25 * max_peak, max_peak]
-
-    start_points = []
-    temp = 0
-    for idx, p in chanFpz.iteritems():
-        if p >= det_window[0]:
-            if temp == 0:
-                start_points.append((idx / samp_freq, p))
-                temp = 1
-        else:
-            temp = 0
-
-    print("Number of blinks detected: ", len(start_points))
-
-    fig = plt.figure(figsize=(14, 6))
-    plt.axhline(y=0, color="black")
-    plt.plot(x, chanFpz)
-    plt.plot(max_pos / samp_freq, max_peak, marker="o", color="r")
-    plt.axhline(y=det_window[0], color="r")
-    for p in start_points:
-        plt.plot(p[0], p[1], marker="o", color="g")
-    # plt.axhline(y=det_window[1], color="r")
-    plt.title(make_plot_title(filename), fontsize="x-large")
-
-    return fig
-
-
 def filter_record(filename: str, low_freq: float, high_freq: float) -> pd.DataFrame:
     # Read in raw, cleaned data
     data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
@@ -226,7 +188,7 @@ def filter_record(filename: str, low_freq: float, high_freq: float) -> pd.DataFr
     return data
 
 
-def perform_ICA(record: pd.DataFrame) -> list[pd.DataFrame, pd.DataFrame]:
+def run_ICA(record: pd.DataFrame) -> list[pd.DataFrame, pd.DataFrame]:
     ica = FastICA(random_state=42)
     comps_ = ica.fit_transform(record)  # Reconstruct signals (type: np.ndarray)
     mixing_ = ica.mixing_  # Get estimated mixing matrix (type: np.ndarray)
@@ -235,58 +197,10 @@ def perform_ICA(record: pd.DataFrame) -> list[pd.DataFrame, pd.DataFrame]:
     comps = pd.DataFrame(comps_)
     mixing = pd.DataFrame(mixing_)
 
-    # plt.figure("rec")
-    # plt.plot(record)
-    # for i in range(S.shape[1]):
-    #     plt.figure(i)
-    #     plt.plot(S.iloc[i,:])
-    # plt.show()
-
     return comps, mixing
 
 
-def find_eye_blinks(record: pd.DataFrame, ica, filename: str):  # -> pd.DataFrame:
-    lower_ratio = 0.3
-
-    # ----------------------------- FILTERED RECORD -----------------------------
-    chanFpz = record["Fpz-A1"]
-    max_peak = chanFpz.max()
-    det_window = [lower_ratio * max_peak, max_peak]
-
-    start_points = []
-    temp = 0
-    for idx, p in chanFpz.iteritems():
-        if p >= det_window[0]:
-            if temp == 0:
-                start_points.append((idx / samp_freq, p))
-                temp = 1
-        else:
-            temp = 0
-
-    print("Number of blinks detected in record: ", len(start_points))
-
-    # ----------------------------- ICA OF RECORD -----------------------------
-    comps = ica.shape[1]
-    points_per_comp = []
-
-    for c in range(comps):
-        comp = abs(ica.iloc[:, c])
-        max_peak = comp.max()
-        det_window = [lower_ratio * max_peak, max_peak]
-
-        start_points = []
-        temp = 0
-        for idx, p in comp.iteritems():
-            if p >= det_window[0]:
-                if temp == 0:
-                    start_points.append((idx / samp_freq, p))
-                    temp = 1
-            else:
-                temp = 0
-
-        points_per_comp.append(len(start_points))
-
-    print(points_per_comp)
+def remove_blinks_and_pulse(record: pd.DataFrame, ica, filename: str):
 
     return
 
@@ -416,10 +330,9 @@ def plot_record(record: pd.DataFrame, filename: str) -> plt.figure:
     for i in range(0, channels):
         if "ICA" in filename:
             y = i / 10
+            plt.text(-1, -y - 0.02, record.columns[i], fontsize="small", ha="right")
         else:
-            y = (
-                i * 20
-            )  # Placement of signal on y-axis, stack channels one after the other
+            y = i * 20
             plt.text(-1, -y - 3, record.columns[i], fontsize="small", ha="right")
         if color == len(color_codes):
             color = 0
@@ -436,19 +349,95 @@ def plot_record(record: pd.DataFrame, filename: str) -> plt.figure:
     return fig
 
 
+def remove_artefacts(
+    record: pd.DataFrame,
+    ica_comps: pd.DataFrame,
+    ica_mixing: pd.DataFrame,
+    comp_ids: list,
+) -> list[pd.DataFrame, pd.DataFrame]:
+    # Save column names and convert dataframes to numpy arrays for calculation
+    columns = record.columns
+    mix_np = ica_mixing.to_numpy()
+    comps_np = ica_comps.to_numpy()
+
+    # Set all components with unwanted artefacts to zero
+    for id in comp_ids:
+        comps_np[:, id] = 0
+
+    # Update record so unwanted artefacts are removed
+    updated_rec = np.dot(comps_np, mix_np.T)
+    updated_rec = pd.DataFrame(updated_rec, columns=columns)
+    updated_comps = pd.DataFrame(comps_np)
+
+    return updated_comps, updated_rec
+
+
 if __name__ == "__main__":
     # Run this if we have don't have the cleaned files
     if not os.listdir(root + "Data/tDCS_EEG_data/Data_cleaned/"):
         clean_data()
         print("Cleaned files saved.")
 
+    # Artefact removal
+    data_path = root + "Data/tDCS_EEG_data/Data_cleaned"
+    subjects = os.listdir(data_path)
+    subjects = subjects[0:2]
+
+    for sub in subjects:
+        # Filter record and then perform ICA
+        rec = filter_record(sub, 0.5, 40)
+        comps, mixing = run_ICA(rec)
+
+        # Make list of components to remove and then update record
+        comps_to_remove = [2, 18]
+        updated_comps, updated_rec = remove_artefacts(
+            rec, comps, mixing, comps_to_remove
+        )
+
+        # Plot
+        fig00 = plot_record(rec, sub)
+        fig10 = plot_record(comps, "ICA -- " + sub)
+        fig11 = plot_record(updated_comps, "Updated ICA -- " + sub)
+        fig01 = plot_record(updated_rec, "Updated -- " + sub)
+        plt.show()
+
+        # Save updated record
+
+        """
+        # Plot and save record, ICA, updated ICA and updated record
+        fig, axs = plt.subplots(2, 2)
+        axs[0, 0].plot(x, y)
+        axs[0, 0].set_title("main")
+        axs[1, 0].plot(x, y**2)
+        axs[1, 0].set_title("shares x with main")
+        axs[0, 1].plot(x + 1, y + 1)
+        axs[0, 1].set_title("unrelated")
+        axs[1, 1].plot(x + 2, y + 2)
+        axs[1, 1].set_title("also unrelated")
+        fig.tight_layout()
+        fig00 = plot_record(rec, sub)
+        fig01 = plot_record(updated_rec, "Updated -- " + sub)
+        fig10 = plot_record(comps, "ICA -- " + sub)
+        fig11 = plot_record(comps, "Updated ICA -- " + sub)
+
+        fig, axarr = plt.subplots(2, 2)
+        plt.sca(axarr[0, 0]); fig00
+        plt.sca(axarr[0, 1]); fig01
+        plt.sca(axarr[1, 0]); fig10
+        plt.sca(axarr[1, 1]); fig11
+        plt.show()
+        plt.savefig(root + "Images/" + sub[:-4] + ".png")
+        """
+
+    # fmt: off
+    """
     # fig1 = plot_example_process("S32_pre_EC.txt", 0.5, 50)
     # fig1 = plot_example_process("S32_H_post_EC.txt", 0.5, 50)
     # plt.show()
     # filter_record("S1-Pre-EC1_EEG_cleaned.txt", 0.5, 50)
 
     # Example of bad: 36, 12
-    subject_no = 12
+    subject_no = 10
 
     record_names = [
         "S" + str(subject_no) + "_pre_EO.txt",
@@ -461,71 +450,30 @@ if __name__ == "__main__":
     for name in record_names:
         record_filtered = filter_record(name, 0.5, 50)
         records.append(record_filtered)
-        # figs.append(plot_record(record_filtered, name))
 
-    # channel1 = rec1.iloc[:, 0]
-    # plt.figure("1channel")
-    # figchan = plt.plot(channel1)
-    # figs.append(figchan)
-
-    # plt.show()
-
-    """ for i in range(2, 4):
-        rec_name = "S" + str(i) + "_pre_EO.txt"
-        try:
-            rec = filter_record(rec_name, 0.5, 50)
-        except:
-            continue
-        comps, mixing = perform_ICA(rec)
-        plot_record(rec, rec_name)
-        plot_record(comps, "ICA - "+ rec_name)
-        print("Comps shape: ", comps.shape)
-        print("Comps type: ", type(comps))
-        plt.show()
+    # rec1 = records[0]
+    # mne_top(rec1)
 
     rec_for_ica = records[0]
 
-    comps, mixing = perform_ICA(rec_for_ica)
-    plot_record(rec_for_ica, record_names[0])
-    plot_record(comps, "ICA - "+ record_names[0])
+    comps, mixing = run_ICA(rec_for_ica)
 
-    plt.show()
-
-    rec1 = records[0]
-    mne_top(rec1) """
-
-    rec_for_ica = records[0]
-    comps, mixing = perform_ICA(rec_for_ica)
-    # find_eye_blinks(rec_for_ica, comps, record_names[0])
-
-    print(rec_for_ica.shape)
-    print(comps.shape)
-    print(mixing.shape)
-    print()
-    print("----------------------- RECORD -----------------------")
-    # print(rec_for_ica)
-    print()
-    print("----------------------- MIXING -----------------------")
-    # print(mixing)
-    print()
-    print(rec_for_ica.shape, " dot ", mixing.shape, " equals:")
     rec_np = rec_for_ica.to_numpy()
     mix_np = mixing.to_numpy()
-    print(rec_np.shape)
-    print(mix_np.shape)
-    multip = rec_np.dot(mix_np)
-    print(multip.shape)
-    # print(rec_for_ica.dot(mixing))
-    multip = pd.DataFrame(multip)
-    print()
-    print("DIFFERENCE BETWEEN COMPS AND MULTIP:")
-    diff = comps - multip
-    print(max(diff))
-    print(min(diff))
-    print(diff)
+    comps_np = comps.to_numpy()
+
+    # S12: Set IC xx as zero to remove eye blinking
+    comps_np[:, 4] = 0
+
+    # S10: Set IC yy as zero to remove pulse
+    comps_np[:, 5] = 0
+
+    rec_est = np.dot(comps_np, mix_np.T)
+    rec_est = pd.DataFrame(rec_est)
 
     plot_record(rec_for_ica, record_names[0])
     plot_record(comps, "ICA - " + record_names[0])
-    plot_record(multip, "MULTIPLY - " + record_names[0])
+    plot_record(rec_est, "RECONSTRUCTED - " + record_names[0])
 
     plt.show()
+    """
