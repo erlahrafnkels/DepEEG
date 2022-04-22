@@ -56,7 +56,7 @@ samp_freq = 500  # Sample frequency, given in data description (Hz)
 config = OmegaConf.load("config.yaml")
 color_codes = [c[1] for c in config.colors.items()]
 
-# Get root folder based on which operating system I'm working on (needed for mac)
+# Get root folder based on which operating system I'm working on
 root = ""
 if platform == "darwin":
     root = "/Users/erlahrafnkelsdottir/Documents/DepEEG/"
@@ -108,7 +108,7 @@ def update_filename(file: str) -> str:
     # Updated filename
     new_filename = subject + "_" + pre_or_post + "_" + open_or_closed + ".txt"
 
-    return new_filename
+    return new_filename, subject
 
 
 def correct_refs(df: pd.DataFrame) -> pd.DataFrame:
@@ -138,10 +138,11 @@ def clean_data():
             df = df[els_with_t3a2]
 
         # Update filename and save
-        filename = update_filename(file)
-        df.to_csv(
-            root + "Data/tDCS_EEG_data/Data_cleaned/" + filename, sep="\t", index=False
-        )
+        filename, subject = update_filename(file)
+        path = root + "Data/tDCS_EEG_data/Data_cleaned/" + subject + "/"
+        if not os.path.isdir(path):
+            os.makedirs(path)
+        df.to_csv(path + filename, sep="\t", index=False)
 
     return
 
@@ -168,9 +169,11 @@ def butter_bandpass_filter(
     return y
 
 
-def filter_record(filename: str, low_freq: float, high_freq: float) -> pd.DataFrame:
+def filter_record(
+    filename: str, subject: str, low_freq: float, high_freq: float
+) -> pd.DataFrame:
     # Read in raw, cleaned data
-    data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
+    data_path = root + "Data/tDCS_EEG_data/Data_cleaned/" + subject + "/"
     data = pd.read_csv(data_path + filename, sep="\t", index_col=False)
 
     # For each channel apply filters, normalize and replace data column values with new
@@ -180,10 +183,6 @@ def filter_record(filename: str, low_freq: float, high_freq: float) -> pd.DataFr
         signal_filtered = butter_bandpass_filter(signal_notched, low_freq, high_freq)
         sf_norm = zscore(signal_filtered)
         data[col] = sf_norm
-
-    # if "EO" in filename:
-    #    remove_eye_blinks(data, filename)  # Produces a figure
-    #    plt.show()
 
     return data
 
@@ -251,10 +250,10 @@ def make_plot_title(filename: str) -> str:
 
 
 def plot_example_process(
-    filename: str, low_freq: float, high_freq: float
+    filename: str, subject: str, low_freq: float, high_freq: float
 ) -> plt.figure:
     # Read in raw, cleaned data
-    data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
+    data_path = root + "Data/tDCS_EEG_data/Data_cleaned/" + subject + "/"
     data = pd.read_csv(data_path + filename, sep="\t", index_col=False)
     raw = data.iloc[:, 0]  # Here we're only looking at the records of Fp1
 
@@ -372,17 +371,74 @@ def remove_artefacts(
     return updated_comps, updated_rec
 
 
+def filter_and_ica():
+    data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
+    subjects = os.listdir(data_path)
+
+    for sub in subjects:
+        files = os.listdir(data_path + sub + "/")
+        for file in files:
+            rec = filter_record(file, sub, 0.5, 40)
+            comps, mixing = run_ICA(rec)
+
+            # Save all dataframes
+            rec.to_csv(
+                data_path + sub + "/" + file[:-4] + "_filt.txt", sep="\t", index=False
+            )
+            comps.to_csv(
+                data_path + sub + "/" + file[:-4] + "_ICA_comps.txt",
+                sep="\t",
+                index=False,
+            )
+            mixing.to_csv(
+                data_path + sub + "/" + file[:-4] + "_ICA_mix.txt",
+                sep="\t",
+                index=False,
+            )
+
+    return
+
+
 if __name__ == "__main__":
     # Run this if we have don't have the cleaned files
     if not os.listdir(root + "Data/tDCS_EEG_data/Data_cleaned/"):
         clean_data()
         print("Cleaned files saved.")
 
-    # Artefact removal
-    data_path = root + "Data/tDCS_EEG_data/Data_cleaned"
-    subjects = os.listdir(data_path)
-    subjects = subjects[0:2]
+    # Filtering and ICA
+    check_file = root + "Data/tDCS_EEG_data/Data_cleaned/S1/S1_pre_EO_ICA_mix.txt"
+    if not os.path.exists(check_file):
+        filter_and_ica()
+        print("Filtered and ICA files saved.")
 
+    # Loop through all filtered records and their ICA components
+    # Plot to view and find which components contain artefacts to remove
+    data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
+    subjects = os.listdir(data_path)
+
+    figs = 0
+    for sub in subjects:
+        files = os.listdir(data_path + sub + "/")
+        for file in files:
+            if "filt" in file:
+                data = pd.read_csv(
+                    data_path + sub + "/" + file, sep="\t", index_col=False
+                )
+                plot_record(data, "Filtered - " + file)
+                figs += 1
+            if "comps" in file:
+                data = pd.read_csv(
+                    data_path + sub + "/" + file, sep="\t", index_col=False
+                )
+                plot_record(data, "ICA - " + file)
+                figs += 1
+            if figs == 2:
+                plt.show()
+                figs = 0
+
+    # fmt: off
+    """
+    #############################################################################
     for sub in subjects:
         # Filter record and then perform ICA
         rec = filter_record(sub, 0.5, 40)
@@ -400,10 +456,8 @@ if __name__ == "__main__":
         fig11 = plot_record(updated_comps, "Updated ICA -- " + sub)
         fig01 = plot_record(updated_rec, "Updated -- " + sub)
         plt.show()
+    #############################################################################
 
-        # Save updated record
-
-        """
         # Plot and save record, ICA, updated ICA and updated record
         fig, axs = plt.subplots(2, 2)
         axs[0, 0].plot(x, y)
@@ -427,10 +481,7 @@ if __name__ == "__main__":
         plt.sca(axarr[1, 1]); fig11
         plt.show()
         plt.savefig(root + "Images/" + sub[:-4] + ".png")
-        """
 
-    # fmt: off
-    """
     # fig1 = plot_example_process("S32_pre_EC.txt", 0.5, 50)
     # fig1 = plot_example_process("S32_H_post_EC.txt", 0.5, 50)
     # plt.show()
