@@ -354,10 +354,15 @@ def remove_artefacts(
     ica_mixing: pd.DataFrame,
     comp_ids: list,
 ) -> list[pd.DataFrame, pd.DataFrame]:
+    # Make copies of dataframes to make sure they are not overwritten
+    rec_copy = record.copy()
+    comps_copy = ica_comps.copy()
+    mix_copy = ica_mixing.copy()
+
     # Save column names and convert dataframes to numpy arrays for calculation
-    columns = record.columns
-    mix_np = ica_mixing.to_numpy()
-    comps_np = ica_comps.to_numpy()
+    columns = rec_copy.columns
+    mix_np = mix_copy.to_numpy()
+    comps_np = comps_copy.to_numpy()
 
     # Set all components with unwanted artefacts to zero
     for id in comp_ids:
@@ -406,10 +411,36 @@ if __name__ == "__main__":
         print("Cleaned files saved.")
 
     # Filtering and ICA
+    # We only want to run this ONCE so we are always using the same ICA
     check_file = root + "Data/tDCS_EEG_data/Data_cleaned/S1/S1_pre_EO_ICA_mix.txt"
     if not os.path.exists(check_file):
         filter_and_ica()
         print("Filtered and ICA files saved.")
+
+    plot_artefact_removal_example = False
+
+    if plot_artefact_removal_example:
+        test_file = root + "Data/tDCS_EEG_data/Data_cleaned/S11/S11_post_EO_filt.txt"
+        test_file_comps = (
+            root + "Data/tDCS_EEG_data/Data_cleaned/S11/S11_post_EO_ICA_comps.txt"
+        )
+        test_file_mix = (
+            root + "Data/tDCS_EEG_data/Data_cleaned/S11/S11_post_EO_ICA_mix.txt"
+        )
+        test_rec = pd.read_csv(test_file, sep="\t", index_col=False)
+        test_rec_comps = pd.read_csv(test_file_comps, sep="\t", index_col=False)
+        test_rec_mix = pd.read_csv(test_file_mix, sep="\t", index_col=False)
+        comp_ids = [0, 14, 25]
+        updated_comps, updated_rec = remove_artefacts(
+            test_rec, test_rec_comps, test_rec_mix, comp_ids
+        )
+
+        plot_record(test_rec, "S11_post_EO_filt.txt")
+        plot_record(test_rec_comps, "ICA - S11_post_EO_ICA_comps.txt")
+        plot_record(updated_comps, "Updated ICA - S11_post_EO_ICA_comps.txt")
+        plot_record(updated_rec, "Reconstructed - S11_post_EO_filt.txt")
+
+        plt.show()
 
     # Loop through all filtered records and their ICA components
     # Plot to view and find which components contain artefacts to remove
@@ -435,96 +466,3 @@ if __name__ == "__main__":
             if figs == 2:
                 plt.show()
                 figs = 0
-
-    # fmt: off
-    """
-    #############################################################################
-    for sub in subjects:
-        # Filter record and then perform ICA
-        rec = filter_record(sub, 0.5, 40)
-        comps, mixing = run_ICA(rec)
-
-        # Make list of components to remove and then update record
-        comps_to_remove = [2, 18]
-        updated_comps, updated_rec = remove_artefacts(
-            rec, comps, mixing, comps_to_remove
-        )
-
-        # Plot
-        fig00 = plot_record(rec, sub)
-        fig10 = plot_record(comps, "ICA -- " + sub)
-        fig11 = plot_record(updated_comps, "Updated ICA -- " + sub)
-        fig01 = plot_record(updated_rec, "Updated -- " + sub)
-        plt.show()
-    #############################################################################
-
-        # Plot and save record, ICA, updated ICA and updated record
-        fig, axs = plt.subplots(2, 2)
-        axs[0, 0].plot(x, y)
-        axs[0, 0].set_title("main")
-        axs[1, 0].plot(x, y**2)
-        axs[1, 0].set_title("shares x with main")
-        axs[0, 1].plot(x + 1, y + 1)
-        axs[0, 1].set_title("unrelated")
-        axs[1, 1].plot(x + 2, y + 2)
-        axs[1, 1].set_title("also unrelated")
-        fig.tight_layout()
-        fig00 = plot_record(rec, sub)
-        fig01 = plot_record(updated_rec, "Updated -- " + sub)
-        fig10 = plot_record(comps, "ICA -- " + sub)
-        fig11 = plot_record(comps, "Updated ICA -- " + sub)
-
-        fig, axarr = plt.subplots(2, 2)
-        plt.sca(axarr[0, 0]); fig00
-        plt.sca(axarr[0, 1]); fig01
-        plt.sca(axarr[1, 0]); fig10
-        plt.sca(axarr[1, 1]); fig11
-        plt.show()
-        plt.savefig(root + "Images/" + sub[:-4] + ".png")
-
-    # fig1 = plot_example_process("S32_pre_EC.txt", 0.5, 50)
-    # fig1 = plot_example_process("S32_H_post_EC.txt", 0.5, 50)
-    # plt.show()
-    # filter_record("S1-Pre-EC1_EEG_cleaned.txt", 0.5, 50)
-
-    # Example of bad: 36, 12
-    subject_no = 10
-
-    record_names = [
-        "S" + str(subject_no) + "_pre_EO.txt",
-        "S" + str(subject_no) + "_pre_EC.txt",
-        "S" + str(subject_no) + "_post_EO.txt",
-        "S" + str(subject_no) + "_post_EC.txt",
-    ]
-    figs = []
-    records = []
-    for name in record_names:
-        record_filtered = filter_record(name, 0.5, 50)
-        records.append(record_filtered)
-
-    # rec1 = records[0]
-    # mne_top(rec1)
-
-    rec_for_ica = records[0]
-
-    comps, mixing = run_ICA(rec_for_ica)
-
-    rec_np = rec_for_ica.to_numpy()
-    mix_np = mixing.to_numpy()
-    comps_np = comps.to_numpy()
-
-    # S12: Set IC xx as zero to remove eye blinking
-    comps_np[:, 4] = 0
-
-    # S10: Set IC yy as zero to remove pulse
-    comps_np[:, 5] = 0
-
-    rec_est = np.dot(comps_np, mix_np.T)
-    rec_est = pd.DataFrame(rec_est)
-
-    plot_record(rec_for_ica, record_names[0])
-    plot_record(comps, "ICA - " + record_names[0])
-    plot_record(rec_est, "RECONSTRUCTED - " + record_names[0])
-
-    plt.show()
-    """
