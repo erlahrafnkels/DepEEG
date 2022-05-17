@@ -335,7 +335,7 @@ def plot_record(record: pd.DataFrame, filename: str) -> plt.figure:
             plt.text(-1, -y - 3, record.columns[i], fontsize="small", ha="right")
         if color == len(color_codes):
             color = 0
-        plt.plot(x, record.iloc[:, i] - y, color=color_codes[color])
+        plt.plot(x, record.iloc[:, i] - y, color=color_codes[color], linewidth=0.75)
         color += 1
 
     plt.title(make_plot_title(filename), fontsize="x-large")
