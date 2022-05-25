@@ -46,9 +46,12 @@ A1ref = ["F7", "FT7", "T3", "TP7", "T5", "Fp1", "F3", "FC3", "C3", "CP3", "P3", 
 A2ref = ["Cz", "CPz", "Pz", "Oz", "Fp2", "F4", "FC4", "C4", "CP4", "P4", "O2", "F8", "FT8", "T4", "TP8", "T6"]
 healthy = [
     "S2", "S3", "S9", "S10", "S12", "S13", "S14", "S15", "S19", "S20", "S24", "S25", "S30", "S32", "S38", "S39", "S42",
-    "S46", "S29", "S6", "S23", "S47", "S49",
+    "S46", "S29", "S6", "S23", "S47", "S49", "S53", "S55", "S56", "S57", "S60", "S61"
 ]
-depressed_active = ["S1", "S4", "S5", "S7", "S8", "S11", "S16", "S17", "S18", "S21", "S22", "S26", "S27"]
+depressed_active = [
+    "S1", "S4", "S5", "S7", "S8", "S11", "S16", "S17", "S18", "S21", "S22", "S26", "S27", "S51", "S52", "S54", "S58",
+    "S59"
+]
 depressed_sham = ["S31", "S33", "S35", "S36", "S37", "S40", "S41", "S43", "S44", "S45"]
 depressed = depressed_active + depressed_sham
 # fmt: on
@@ -62,8 +65,7 @@ if platform == "darwin":
     root = "/Users/erlahrafnkelsdottir/Documents/DepEEG/"
 
 
-def get_files() -> list:
-    data_path = root + "Data/tDCS_EEG_data/"
+def get_files(data_path: str) -> list:
     subject_folders = os.listdir(data_path)
     txt_file_paths = []
 
@@ -119,14 +121,20 @@ def correct_refs(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def clean_data():
-    files = get_files()
+def clean_data(files: list):
     print("Cleaning data files.")
     for file in files:
-        df = pd.read_csv(file, sep="\t", index_col=False)
+        if ".txt" in file:
+            df = pd.read_csv(file, sep="\t", index_col=False)
+        else:
+            data = mne.io.read_raw_eeglab(file)
+            df = mne.io.Raw.to_data_frame(data)
+
+        # If EEG is in column name, delete it
+        df.columns = df.columns.str.replace("EEG ", "")
 
         # First, subtract A1 and A2 references from corresponding columns if it hasn't been done
-        if not ("-A1" or "-A2") in df.columns[0]:
+        if not ("-A1" or "-A2") in df.columns[1]:
             df = correct_refs(df)
 
         # Then, remove all unnecessary columns and arrange correctly
@@ -226,7 +234,9 @@ def mne_top(record: pd.DataFrame):
 
 def make_plot_title(filename: str) -> str:
     name_split = filename[:-4].split("_")
-    subject = name_split[0]
+    beginning = name_split[0]
+    sub_idx = name_split[0].find("S")
+    subject = name_split[0][sub_idx:]
     pre_or_post = name_split[1]
     open_or_closed = name_split[2]
     h_or_d = ""
@@ -244,7 +254,7 @@ def make_plot_title(filename: str) -> str:
     else:
         open_or_closed = ", eyes closed"
 
-    plot_title = subject + ": " + h_or_d + pre_or_post + open_or_closed
+    plot_title = beginning + ": " + h_or_d + pre_or_post + open_or_closed
 
     return plot_title
 
@@ -376,10 +386,7 @@ def remove_artefacts(
     return updated_comps, updated_rec
 
 
-def filter_and_ica():
-    data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
-    subjects = os.listdir(data_path)
-
+def filter_and_ica(data_path: str, subjects: list):
     for sub in subjects:
         files = os.listdir(data_path + sub + "/")
         for file in files:
@@ -407,14 +414,17 @@ def filter_and_ica():
 if __name__ == "__main__":
     # Run this if we have don't have the cleaned files
     if not os.listdir(root + "Data/tDCS_EEG_data/Data_cleaned/"):
-        clean_data()
+        files = get_files(root + "Data/tDCS_EEG_data/")
+        clean_data(files)
         print("Cleaned files saved.")
 
     # Filtering and ICA
     # We only want to run this ONCE so we are always using the same ICA
     check_file = root + "Data/tDCS_EEG_data/Data_cleaned/S1/S1_pre_EO_ICA_mix.txt"
     if not os.path.exists(check_file):
-        filter_and_ica()
+        data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
+        subjects = os.listdir(data_path)
+        filter_and_ica(data_path, subjects)
         print("Filtered and ICA files saved.")
 
     plot_artefact_removal_example = False
@@ -442,27 +452,94 @@ if __name__ == "__main__":
 
         plt.show()
 
-    # Loop through all filtered records and their ICA components
-    # Plot to view and find which components contain artefacts to remove
+    # Get together all "filt" files of all subjects
+    all_filt_files = []
     data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
     subjects = os.listdir(data_path)
-
-    figs = 0
     for sub in subjects:
         files = os.listdir(data_path + sub + "/")
         for file in files:
             if "filt" in file:
-                data = pd.read_csv(
-                    data_path + sub + "/" + file, sep="\t", index_col=False
-                )
-                plot_record(data, "Filtered - " + file)
-                figs += 1
-            if "comps" in file:
-                data = pd.read_csv(
-                    data_path + sub + "/" + file, sep="\t", index_col=False
-                )
-                plot_record(data, "ICA - " + file)
-                figs += 1
-            if figs == 2:
-                plt.show()
-                figs = 0
+                all_filt_files.append(file)
+
+    # Loop through all filtered records and their ICA components
+    # Plot to view and find which components contain artefacts to remove
+    view_ICAs = True
+
+    if view_ICAs:
+        data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
+        subjects = [
+            "S51",
+            "S52",
+            "S53",
+            "S54",
+            "S55",
+            "S56",
+            "S57",
+            "S58",
+            "S59",
+            "S60",
+            "S61",
+        ]  # os.listdir(data_path)
+        figs = 0
+
+        for sub in subjects:
+            files = os.listdir(data_path + sub + "/")
+            for file in files:
+                if "filt" in file:
+                    data = pd.read_csv(
+                        data_path + sub + "/" + file, sep="\t", index_col=False
+                    )
+                    plot_record(data, "Filtered - " + file)
+                    figs += 1
+                if "comps" in file:
+                    data = pd.read_csv(
+                        data_path + sub + "/" + file, sep="\t", index_col=False
+                    )
+                    plot_record(data, "ICA - " + file)
+                    figs += 1
+                if figs == 2:
+                    plt.show()
+                    figs = 0
+
+    # Fetch and save data files from second round of data obtained
+    check_file = root + "Data/tDCS_EEG_data/Data_cleaned/S51/S51_post_EC.txt"
+    if not os.path.exists(check_file):
+        pre_d2_path = root + "Data/tDCS_EEG_data/Pre_dataset_2/"
+        pre_d2 = os.listdir(pre_d2_path)
+        pre_d2_files = []
+        for file in pre_d2:
+            if ".set" in file:
+                pre_d2_files.append(pre_d2_path + file)
+        clean_data(pre_d2_files)
+
+        post_d2_path = root + "Data/tDCS_EEG_data/Post_dataset_2/"
+        post_d2 = os.listdir(post_d2_path)
+        post_d2_files = []
+        for file in post_d2:
+            if ".set" in file:
+                post_d2_files.append(post_d2_path + file)
+        clean_data(post_d2_files)
+
+    # Then filter and run ICA on the new data
+    # Again, we only want to run this ONCE so we are always using the same ICA
+    new_data = [
+        "S51",
+        "S52",
+        "S53",
+        "S54",
+        "S55",
+        "S56",
+        "S57",
+        "S58",
+        "S59",
+        "S60",
+        "S61",
+    ]
+
+    check_file = root + "Data/tDCS_EEG_data/Data_cleaned/S54/S54_pre_EO_ICA_mix.txt"
+    if not os.path.exists(check_file):
+        data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
+        subjects = new_data
+        filter_and_ica(data_path, subjects)
+        print("Filtered and ICA files saved.")
