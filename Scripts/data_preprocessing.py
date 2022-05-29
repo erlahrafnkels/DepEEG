@@ -44,6 +44,7 @@ els_with_t3a2 = electrodes_arranged.copy()
 els_with_t3a2.insert(13, 'T3-A2')
 A1ref = ["F7", "FT7", "T3", "TP7", "T5", "Fp1", "F3", "FC3", "C3", "CP3", "P3", "O1", "Fpz", "Fz", "FCz"]
 A2ref = ["Cz", "CPz", "Pz", "Oz", "Fp2", "F4", "FC4", "C4", "CP4", "P4", "O2", "F8", "FT8", "T4", "TP8", "T6"]
+new_data = ["S51", "S52", "S53", "S54", "S55", "S56", "S57", "S58", "S59", "S60", "S61"]
 healthy = [
     "S2", "S3", "S9", "S10", "S12", "S13", "S14", "S15", "S19", "S20", "S24", "S25", "S30", "S32", "S38", "S39", "S42",
     "S46", "S29", "S6", "S23", "S47", "S49", "S53", "S55", "S56", "S57", "S60", "S61"
@@ -358,6 +359,31 @@ def plot_record(record: pd.DataFrame, filename: str) -> plt.figure:
     return fig
 
 
+def filter_and_ica(data_path: str, subjects: list):
+    for sub in subjects:
+        files = os.listdir(data_path + sub + "/")
+        for file in files:
+            rec = filter_record(file, sub, 0.5, 40)
+            comps, mixing = run_ICA(rec)
+
+            # Save all dataframes
+            rec.to_csv(
+                data_path + sub + "/" + file[:-4] + "_filt.txt", sep="\t", index=False
+            )
+            comps.to_csv(
+                data_path + sub + "/" + file[:-4] + "_ICA_comps.txt",
+                sep="\t",
+                index=False,
+            )
+            mixing.to_csv(
+                data_path + sub + "/" + file[:-4] + "_ICA_mix.txt",
+                sep="\t",
+                index=False,
+            )
+
+    return
+
+
 def remove_artefacts(
     record: pd.DataFrame,
     ica_comps: pd.DataFrame,
@@ -384,31 +410,6 @@ def remove_artefacts(
     updated_comps = pd.DataFrame(comps_np)
 
     return updated_comps, updated_rec
-
-
-def filter_and_ica(data_path: str, subjects: list):
-    for sub in subjects:
-        files = os.listdir(data_path + sub + "/")
-        for file in files:
-            rec = filter_record(file, sub, 0.5, 40)
-            comps, mixing = run_ICA(rec)
-
-            # Save all dataframes
-            rec.to_csv(
-                data_path + sub + "/" + file[:-4] + "_filt.txt", sep="\t", index=False
-            )
-            comps.to_csv(
-                data_path + sub + "/" + file[:-4] + "_ICA_comps.txt",
-                sep="\t",
-                index=False,
-            )
-            mixing.to_csv(
-                data_path + sub + "/" + file[:-4] + "_ICA_mix.txt",
-                sep="\t",
-                index=False,
-            )
-
-    return
 
 
 if __name__ == "__main__":
@@ -452,39 +453,18 @@ if __name__ == "__main__":
 
         plt.show()
 
-    # Get together all "filt" files of all subjects
-    all_filt_files = []
-    data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
-    subjects = os.listdir(data_path)
-    for sub in subjects:
-        files = os.listdir(data_path + sub + "/")
-        for file in files:
-            if "filt" in file:
-                all_filt_files.append(file)
-
     # Loop through all filtered records and their ICA components
     # Plot to view and find which components contain artefacts to remove
-    view_ICAs = True
+    view_ICAs = False
 
     if view_ICAs:
         data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
-        subjects = [
-            "S51",
-            "S52",
-            "S53",
-            "S54",
-            "S55",
-            "S56",
-            "S57",
-            "S58",
-            "S59",
-            "S60",
-            "S61",
-        ]  # os.listdir(data_path)
+        subjects = os.listdir(data_path)
         figs = 0
 
         for sub in subjects:
             files = os.listdir(data_path + sub + "/")
+            files = sorted(files)
             for file in files:
                 if "filt" in file:
                     data = pd.read_csv(
@@ -523,23 +503,58 @@ if __name__ == "__main__":
 
     # Then filter and run ICA on the new data
     # Again, we only want to run this ONCE so we are always using the same ICA
-    new_data = [
-        "S51",
-        "S52",
-        "S53",
-        "S54",
-        "S55",
-        "S56",
-        "S57",
-        "S58",
-        "S59",
-        "S60",
-        "S61",
-    ]
-
     check_file = root + "Data/tDCS_EEG_data/Data_cleaned/S54/S54_pre_EO_ICA_mix.txt"
     if not os.path.exists(check_file):
         data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
         subjects = new_data
         filter_and_ica(data_path, subjects)
         print("Filtered and ICA files saved.")
+
+    # Get together all "filt" files of all subjects
+    all_filt_files = []
+    data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
+    subjects = os.listdir(data_path)
+    for sub in subjects:
+        if sub == ".DS_Store":  # This file keeps creeping in, skip it
+            continue
+        files = os.listdir(data_path + sub + "/")
+        for file in files:
+            if "filt" in file:
+                all_filt_files.append(file)
+    all_filt_files = sorted(all_filt_files)
+
+    # Now, we use the ICA and remove all the unwanted artefacts we found with manual viewing from the records
+    comps_to_remove = pd.read_csv("Data/Components_to_remove.csv", index_col=False)
+    check_file = root + "Data/tDCS_EEG_data/Data_cleaned/S1/S1_post_EC_ready.txt"
+    if not os.path.exists(check_file):
+        for file in all_filt_files:
+            # Get the indices of the components to remove
+            tab_vals = comps_to_remove.loc[
+                comps_to_remove["Filt_filename"] == file
+            ].iloc[:, 1:6]
+            comp_list = tab_vals.values.tolist()[0]
+            comp_ids = [int(val) for val in comp_list if not m.isnan(val)]
+
+            # Get the dataframes of the filtered record, ICA component and mixture matrices for calculations
+            subject = re.split("_", file)[0]
+            data_path = root + "Data/tDCS_EEG_data/Data_cleaned/" + subject + "/"
+            record = pd.read_csv(data_path + file, sep="\t", index_col=False)
+            ica_comps = pd.read_csv(
+                data_path + file[:-8] + "ICA_comps.txt", sep="\t", index_col=False
+            )
+            ica_mixing = pd.read_csv(
+                data_path + file[:-8] + "ICA_mix.txt", sep="\t", index_col=False
+            )
+
+            # Remove artefacts and save updated records
+            updated_comps, updated_rec = remove_artefacts(
+                record, ica_comps, ica_mixing, comp_ids
+            )
+            updated_comps.to_csv(
+                data_path + file[:-8] + "ICA_comps_updated.txt", sep="\t", index=False
+            )
+            updated_rec.to_csv(
+                data_path + file[:-8] + "ready.txt", sep="\t", index=False
+            )
+
+        print("All artefact removals finished and saved.")
