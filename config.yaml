@@ -11,3 +11,28 @@ colors:
   red: "#E83F48"
   green: "#008835"
   purple: "#79238E"
+
+sample_frequency: 500
+
+electrodes_arranged: [
+    'Fp1-A1', 'Fpz-A1', 'Fp2-A2', 'F7-A1', 'F3-A1', 'Fz-A1', 'F4-A2', 'F8-A2', 'FT7-A1', 'FC3-A1', 'FCz-A1', 'FC4-A2',
+    'FT8-A2', 'C3-A1', 'Cz-A2', 'C4-A2', 'T4-A2', 'TP7-A1', 'CP3-A1', 'CPz-A2', 'CP4-A2', 'TP8-A2', 'T5-A1', 'P3-A1',
+    'Pz-A2', 'P4-A2', 'T6-A2', 'O1-A1', 'Oz-A2', 'O2-A2',
+]
+
+reference_electrodes:
+  A1ref: ["F7", "FT7", "T3", "TP7", "T5", "Fp1", "F3", "FC3", "C3", "CP3", "P3", "O1", "Fpz", "Fz", "FCz"]
+  A2ref: ["Cz", "CPz", "Pz", "Oz", "Fp2", "F4", "FC4", "C4", "CP4", "P4", "O2", "F8", "FT8", "T4", "TP8", "T6"]
+
+new_data: ["S51", "S52", "S53", "S54", "S55", "S56", "S57", "S58", "S59", "S60", "S61"]
+
+subject_classes:
+  healthy: [
+    "S2", "S3", "S9", "S10", "S12", "S13", "S14", "S15", "S19", "S20", "S24", "S25", "S30", "S32", "S38", "S39", "S42",
+    "S46", "S29", "S6", "S23", "S47", "S49", "S53", "S55", "S56", "S57", "S60", "S61"
+  ]
+  depressed_active: [
+    "S1", "S4", "S5", "S7", "S8", "S11", "S16", "S17", "S18", "S21", "S22", "S26", "S27", "S51", "S52", "S54", "S58",
+    "S59"
+  ]
+  depressed_sham: ["S31", "S33", "S35", "S36", "S37", "S40", "S41", "S43", "S44", "S45"]
