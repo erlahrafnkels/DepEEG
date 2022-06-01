@@ -4,8 +4,8 @@ import pandas as pd
 from omegaconf import OmegaConf
 from plot_title import make_plot_title
 
-samp_freq = 500  # Sample frequency, given in data description (Hz)
 config = OmegaConf.load("config.yaml")
+samp_freq = config.sample_frequency
 color_codes = [c[1] for c in config.colors.items()]
 
 

@@ -21,10 +21,16 @@ electrodes_arranged: [
 ]
 
 reference_electrodes:
-  A1ref: ["F7", "FT7", "T3", "TP7", "T5", "Fp1", "F3", "FC3", "C3", "CP3", "P3", "O1", "Fpz", "Fz", "FCz"]
-  A2ref: ["Cz", "CPz", "Pz", "Oz", "Fp2", "F4", "FC4", "C4", "CP4", "P4", "O2", "F8", "FT8", "T4", "TP8", "T6"]
+  A1ref: [
+    "F7", "FT7", "T3", "TP7", "T5", "Fp1", "F3", "FC3", "C3", "CP3", "P3", "O1", "Fpz", "Fz", "FCz"
+  ]
+  A2ref: [
+    "Cz", "CPz", "Pz", "Oz", "Fp2", "F4", "FC4", "C4", "CP4", "P4", "O2", "F8", "FT8", "T4", "TP8", "T6"
+  ]
 
-new_data: ["S51", "S52", "S53", "S54", "S55", "S56", "S57", "S58", "S59", "S60", "S61"]
+new_data: [
+  "S51", "S52", "S53", "S54", "S55", "S56", "S57", "S58", "S59", "S60", "S61"
+]
 
 subject_classes:
   healthy: [
@@ -35,4 +41,6 @@ subject_classes:
     "S1", "S4", "S5", "S7", "S8", "S11", "S16", "S17", "S18", "S21", "S22", "S26", "S27", "S51", "S52", "S54", "S58",
     "S59"
   ]
-  depressed_sham: ["S31", "S33", "S35", "S36", "S37", "S40", "S41", "S43", "S44", "S45"]
+  depressed_sham: [
+    "S31", "S33", "S35", "S36", "S37", "S40", "S41", "S43", "S44", "S45"
+  ]

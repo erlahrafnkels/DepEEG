@@ -11,6 +11,7 @@ import pandas as pd
 from matplotlib.gridspec import GridSpec
 from omegaconf import OmegaConf
 from plot_signals import plot_record
+from plot_title import make_plot_title
 from scipy import signal
 from scipy.stats import zscore
 from sklearn.decomposition import FastICA
@@ -18,46 +19,28 @@ from sklearn.decomposition import FastICA
 warnings.filterwarnings("ignore")
 
 
-"""
-ABOUT THIS SCRIPT ....
-....
-....
+# Get global variables from the configuration file
+config = OmegaConf.load("config.yaml")
 
-Obs: I added input and output types to all of the functions, even though it doesn't change anything in how the
-function is read and executed. It was merely a way for me to remember and easily see the types; i.e. whether
-I had a pandas dataframe or a numpy array, for example.
-
-"""
-
-
-# Global variables
+# EEG electrodes
 # OBS: The T3 electrode is sometimes referred to A2 instead of A1
 # We don't let it bother us for now as it likely doesn't have much effect on calculations
-# fmt: off
-electrodes_arranged = [
-    'Fp1-A1', 'Fpz-A1', 'Fp2-A2', 'F7-A1', 'F3-A1', 'Fz-A1', 'F4-A2', 'F8-A2', 'FT7-A1', 'FC3-A1', 'FCz-A1', 'FC4-A2',
-    'FT8-A2', 'C3-A1', 'Cz-A2', 'C4-A2', 'T4-A2', 'TP7-A1', 'CP3-A1', 'CPz-A2', 'CP4-A2', 'TP8-A2', 'T5-A1', 'P3-A1',
-    'Pz-A2', 'P4-A2', 'T6-A2', 'O1-A1', 'Oz-A2', 'O2-A2',
-]
+electrodes_arranged = config.electrodes_arranged
 els_with_t3a1 = electrodes_arranged.copy()
-els_with_t3a1.insert(13, 'T3-A1')
+els_with_t3a1.insert(13, "T3-A1")
 els_with_t3a2 = electrodes_arranged.copy()
-els_with_t3a2.insert(13, 'T3-A2')
-A1ref = ["F7", "FT7", "T3", "TP7", "T5", "Fp1", "F3", "FC3", "C3", "CP3", "P3", "O1", "Fpz", "Fz", "FCz"]
-A2ref = ["Cz", "CPz", "Pz", "Oz", "Fp2", "F4", "FC4", "C4", "CP4", "P4", "O2", "F8", "FT8", "T4", "TP8", "T6"]
-new_data = ["S51", "S52", "S53", "S54", "S55", "S56", "S57", "S58", "S59", "S60", "S61"]
-healthy = [
-    "S2", "S3", "S9", "S10", "S12", "S13", "S14", "S15", "S19", "S20", "S24", "S25", "S30", "S32", "S38", "S39", "S42",
-    "S46", "S29", "S6", "S23", "S47", "S49", "S53", "S55", "S56", "S57", "S60", "S61"
-]
-depressed_active = [
-    "S1", "S4", "S5", "S7", "S8", "S11", "S16", "S17", "S18", "S21", "S22", "S26", "S27", "S51", "S52", "S54", "S58",
-    "S59"
-]
-depressed_sham = ["S31", "S33", "S35", "S36", "S37", "S40", "S41", "S43", "S44", "S45"]
-# fmt: on
-samp_freq = 500  # Sample frequency, given in data description (Hz)
-config = OmegaConf.load("config.yaml")
+els_with_t3a2.insert(13, "T3-A2")
+A1ref = config.reference_electrodes.A1ref
+A2ref = config.reference_electrodes.A2ref
+samp_freq = config.sample_frequency
+
+# Subjects
+new_data = config.new_data
+healthy = config.subject_classes.healthy
+depressed_active = config.subject_classes.depressed_active
+depressed_sham = config.subject_classes.depressed_sham
+
+# DTU colors for plots
 color_codes = [c[1] for c in config.colors.items()]
 
 # Get root folder based on which operating system I'm working on
@@ -206,53 +189,6 @@ def run_ICA(record: pd.DataFrame) -> list[pd.DataFrame, pd.DataFrame]:
     mixing = pd.DataFrame(mixing_)
 
     return comps, mixing
-
-
-def mne_top(record: pd.DataFrame):
-    channels = record.columns.to_list()
-    info = mne.create_info(ch_names=channels, sfreq=samp_freq, ch_types="eeg")
-    data = mne.io.RawArray(record.T, info)
-    # data.plot(duration=5, n_channels=len(channels))
-
-    print(channels[0:5])
-    print(data.info)
-    print(data.pick_channels())
-
-    ev_data = data[0, :]
-    print(len(ev_data))
-    ev_info = mne.create_info(ch_names=channels[0:5], sfreq=samp_freq, ch_types="eeg")
-    evoked = mne.EvokedArray(ev_data, ev_info)
-    mne.viz.plot_topomap(evoked.data, evoked.info)
-    plt.show()
-
-    return
-
-
-def make_plot_title(filename: str) -> str:
-    name_split = filename[:-4].split("_")
-    beginning = name_split[0]
-    sub_idx = name_split[0].find("S")
-    subject = name_split[0][sub_idx:]
-    pre_or_post = name_split[1]
-    open_or_closed = name_split[2]
-    h_or_d = ""
-
-    if subject in healthy:
-        h_or_d = "Healthy"
-    else:
-        h_or_d = "Depressed"
-    if pre_or_post == "pre":
-        pre_or_post = ", pretreatment"
-    else:
-        pre_or_post = ", posttreatment"
-    if open_or_closed == "EO":
-        open_or_closed = ", eyes open"
-    else:
-        open_or_closed = ", eyes closed"
-
-    plot_title = beginning + ": " + h_or_d + pre_or_post + open_or_closed
-
-    return plot_title
 
 
 def plot_example_process(
@@ -420,21 +356,15 @@ if __name__ == "__main__":
     # Plot to view and find which components contain artefacts to remove
     view_ICAs = True
 
-    # S3 PRE IS MISSING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
     if view_ICAs:
         data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
         subjects = os.listdir(data_path)
         figs = 0
-        i = 1
 
         for sub in subjects:
             files = os.listdir(data_path + sub + "/")
             files = sorted(files)
             for file in files:
-                i += 1
-                if i < 451:
-                    continue
                 if "filt" in file:
                     data = pd.read_csv(
                         data_path + sub + "/" + file, sep="\t", index_col=False
@@ -493,14 +423,17 @@ if __name__ == "__main__":
     all_filt_files = sorted(all_filt_files)
 
     # Now, we use the ICA and remove all the unwanted artefacts we found with manual viewing from the records
-    comps_to_remove = pd.read_csv("Data/Components_to_remove.csv", index_col=False)
-    check_file = root + "Data/tDCS_EEG_data/Data_cleaned/S1/S1_post_EC_ready.txt"
+    check_file = root + "Data/tDCS_EEG_data/Data_ready/S1_post_EC_ready.txt"
     if not os.path.exists(check_file):
+        comps_to_remove = pd.read_csv("Data/Components_to_remove.csv", index_col=False)
+        print("Starting artefact removal.")
+        i = 0
+
         for file in all_filt_files:
             # Get the indices of the components to remove
             tab_vals = comps_to_remove.loc[
                 comps_to_remove["Filt_filename"] == file
-            ].iloc[:, 1:6]
+            ].iloc[:, 1:5]
             comp_list = tab_vals.values.tolist()[0]
             comp_ids = [int(val) for val in comp_list if not m.isnan(val)]
 
@@ -523,14 +456,17 @@ if __name__ == "__main__":
                 data_path + file[:-8] + "ICA_comps_updated.txt", sep="\t", index=False
             )
             updated_rec.to_csv(
-                data_path + file[:-8] + "ready.txt", sep="\t", index=False
+                "Data/tDCS_EEG_data/Data_ready/" + file[:-8] + "ready.txt",
+                sep="\t",
+                index=False,
             )
 
-            print(file, " done")
+            i += 1
+            print(i, "/", len(all_filt_files))
 
         print("All artefact removals finished and saved.")
 
-    # Save all "ready" plot
+    # Save all "ready" plot to review them
     save_plots = False
 
     if save_plots:
@@ -550,44 +486,3 @@ if __name__ == "__main__":
                 plt.savefig("Images/" + filename[:-4])
                 print(i)
                 i += 1
-
-    """
-    if save_plots:
-        data_path = root + "Data/tDCS_EEG_data/Data_ready/"
-        datafiles = os.listdir(data_path)
-        i = 1
-
-        for filename in datafiles:
-            ready_data = pd.read_csv(data_path + filename, sep="\t", index_col=False)
-            plot_record(ready_data, filename)
-            plt.show()
-            #plt.savefig("Images/" + filename[:-4])
-            #print(i)
-            #i += 1
-
-    data3 = pd.read_csv("Data/tDCS_EEG_data/Data_cleaned/S10/S10_post_EC_filt.txt", sep="\t", index_col=False)
-    data4 = pd.read_csv("Data/tDCS_EEG_data/Data_cleaned/S10/S10_post_EC_ready.txt", sep="\t", index_col=False)
-    print("Filtered mean:", data3.stack().mean())
-    print("Ready mean:", data4.stack().mean())
-
-    data1 = pd.read_csv("Data/tDCS_EEG_data/Data_cleaned/S22/S22_post_EO_ICA_comps.txt", sep="\t", index_col=False)
-    data2 = pd.read_csv("Data/tDCS_EEG_data/Data_cleaned/S22/S22_post_EO_ICA_comps_updated.txt", sep="\t",
-        index_col=False)
-    data3 = pd.read_csv("Data/tDCS_EEG_data/Data_cleaned/S22/S22_post_EO_filt.txt", sep="\t", index_col=False)
-    data4 = pd.read_csv("Data/tDCS_EEG_data/Data_cleaned/S22/S22_post_EO_ready.txt", sep="\t", index_col=False)
-    plot_record(data1, "ICA - S22_post_EO_ICA_comps.txt")
-    plot_record(data2, "ICA updated - S22_post_EO_ICA_comps_updated.txt")
-    plot_record(data3, "Filtered - S22_post_EO_filt.txt")
-    plot_record(data4, "Ready - S22_post_EO_ready.txt")
-    plt.show()
-
-    s30_pre_ec_raw = pd.read_csv("Data/tDCS_EEG_data/Data_cleaned/S30/S30_pre_EC_filt.txt", sep="\t", index_col=False)
-    s30_pre_eo_raw = pd.read_csv("Data/tDCS_EEG_data/Data_cleaned/S30/S30_pre_EO_filt.txt", sep="\t", index_col=False)
-    s30_post_ec_raw = pd.read_csv("Data/tDCS_EEG_data/Data_cleaned/S30/S30_post_EC_filt.txt", sep="\t", index_col=False)
-    s30_post_eo_raw = pd.read_csv("Data/tDCS_EEG_data/Data_cleaned/S30/S30_post_EO_filt.txt", sep="\t", index_col=False)
-
-    print("S30 pre EC mean: \t", s30_pre_ec_raw.stack().mean())
-    print("S30 post EC mean: \t", s30_post_ec_raw.stack().mean())
-    print("S30 pre EO mean: \t", s30_pre_eo_raw.stack().mean())
-    print("S30 post EO mean: \t", s30_post_eo_raw.stack().mean())
-    """
