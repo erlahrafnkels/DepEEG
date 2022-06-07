@@ -25,13 +25,13 @@ config = OmegaConf.load("config.yaml")
 # EEG electrodes
 # OBS: The T3 electrode is sometimes referred to A2 instead of A1
 # We don't let it bother us for now as it likely doesn't have much effect on calculations
-electrodes_arranged = config.electrodes_arranged
+electrodes_arranged = config.electrodes.all_electrodes_arranged
 els_with_t3a1 = electrodes_arranged.copy()
 els_with_t3a1.insert(13, "T3-A1")
 els_with_t3a2 = electrodes_arranged.copy()
 els_with_t3a2.insert(13, "T3-A2")
-A1ref = config.reference_electrodes.A1ref
-A2ref = config.reference_electrodes.A2ref
+A1ref = config.electrodes.reference_electrodes.A1ref
+A2ref = config.electrodes.reference_electrodes.A2ref
 samp_freq = config.sample_frequency
 
 # Subjects
@@ -283,7 +283,7 @@ def filter_and_ica(data_path: str, subjects: list):
     return
 
 
-def remove_artefacts(
+def remove_artifacts(
     record: pd.DataFrame,
     ica_comps: pd.DataFrame,
     ica_mixing: pd.DataFrame,
@@ -303,12 +303,24 @@ def remove_artefacts(
     for id in comp_ids:
         comps_np[:, id] = 0
 
-    # Update record so unwanted artefacts are removed
+    # Update record so unwanted artifacts are removed
     updated_rec = np.dot(comps_np, mix_np.T)
     updated_rec = pd.DataFrame(updated_rec, columns=columns)
     updated_comps = pd.DataFrame(comps_np)
 
     return updated_comps, updated_rec
+
+
+def cut_record_116s(record: pd.DataFrame):
+    # Cut off first 4 seconds and cut off after 120 seconds
+    begin = 4 * samp_freq
+    end = 120 * samp_freq
+
+    # Update
+    record.drop(record.index[0:begin], inplace=True)
+    record.drop(record.index[end:], inplace=True)
+
+    return record
 
 
 if __name__ == "__main__":
@@ -327,9 +339,18 @@ if __name__ == "__main__":
         filter_and_ica(data_path, subjects)
         print("Filtered and ICA files saved.")
 
-    plot_artefact_removal_example = False
+    # Plot example process of filtering
+    plot_filter_process_example = False
 
-    if plot_artefact_removal_example:
+    if plot_filter_process_example:
+        # -------------------------------> I HAVE TO CHANGE THIS SO I TAKE COMPLETELY ORIGINAL DATA
+        example_path = root + "Data/tDCS_EEG_data/Data_cleaned/S11/S11_post_EO.txt"
+        plot_example_process("S12_post_EC.txt", "S12", 0.5, 40)
+        plt.show()
+
+    plot_artifact_removal_example = False
+
+    if plot_artifact_removal_example:
         test_file = root + "Data/tDCS_EEG_data/Data_cleaned/S11/S11_post_EO_filt.txt"
         test_file_comps = (
             root + "Data/tDCS_EEG_data/Data_cleaned/S11/S11_post_EO_ICA_comps.txt"
@@ -341,7 +362,7 @@ if __name__ == "__main__":
         test_rec_comps = pd.read_csv(test_file_comps, sep="\t", index_col=False)
         test_rec_mix = pd.read_csv(test_file_mix, sep="\t", index_col=False)
         comp_ids = [0, 14, 25]
-        updated_comps, updated_rec = remove_artefacts(
+        updated_comps, updated_rec = remove_artifacts(
             test_rec, test_rec_comps, test_rec_mix, comp_ids
         )
 
@@ -353,8 +374,8 @@ if __name__ == "__main__":
         plt.show()
 
     # Loop through all filtered records and their ICA components
-    # Plot to view and find which components contain artefacts to remove
-    view_ICAs = True
+    # Plot to view and find which components contain artifacts to remove
+    view_ICAs = False
 
     if view_ICAs:
         data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
@@ -422,11 +443,11 @@ if __name__ == "__main__":
                 all_filt_files.append(file)
     all_filt_files = sorted(all_filt_files)
 
-    # Now, we use the ICA and remove all the unwanted artefacts we found with manual viewing from the records
+    # Now, we use the ICA and remove all the unwanted artifacts we found with manual viewing from the records
     check_file = root + "Data/tDCS_EEG_data/Data_ready/S1_post_EC_ready.txt"
     if not os.path.exists(check_file):
         comps_to_remove = pd.read_csv("Data/Components_to_remove.csv", index_col=False)
-        print("Starting artefact removal.")
+        print("Starting artifact removal.")
         i = 0
 
         for file in all_filt_files:
@@ -448,8 +469,8 @@ if __name__ == "__main__":
                 data_path + file[:-8] + "ICA_mix.txt", sep="\t", index_col=False
             )
 
-            # Remove artefacts and save updated records
-            updated_comps, updated_rec = remove_artefacts(
+            # Remove artifacts and save updated records
+            updated_comps, updated_rec = remove_artifacts(
                 record, ica_comps, ica_mixing, comp_ids
             )
             updated_comps.to_csv(
@@ -464,25 +485,58 @@ if __name__ == "__main__":
             i += 1
             print(i, "/", len(all_filt_files))
 
-        print("All artefact removals finished and saved.")
+        print("All artifact removals finished and saved.")
 
-    # Save all "ready" plot to review them
+    # Cut the beginning and end of the recordings
+    # We cut off the first 4 seconds and then after 120 seconds
+    if not os.listdir(root + "Data/tDCS_EEG_data/Epochs/116_seconds/"):
+        data_path = root + "Data/tDCS_EEG_data/Data_ready/"
+        files = os.listdir(data_path)
+        print("Performing time-cutoffs")
+        i = 0
+        for file in files:
+            record = pd.read_csv(data_path + file, sep="\t", index_col=False)
+            rec_cut_116s = cut_record_116s(record)
+
+            # Form filename
+            name_split = file[:-4].split("_")
+            sub_idx = name_split[0].find("S")
+            subject = name_split[0][sub_idx:]
+            h_or_d = ""
+            if subject in healthy:
+                h_or_d = "Healthy_"
+            elif subject in depressed_active:
+                h_or_d = "DepActive_"
+            else:
+                h_or_d = "DepSham_"
+
+            # rec_cut_116s = pd.to_numeric(rec_cut_116s)
+            rec_cut_116s.to_csv(
+                "Data/tDCS_EEG_data/Epochs/116_seconds/"
+                + file[:-9]
+                + h_or_d
+                + "116s.txt",
+                sep="\t",
+                index=False,
+            )
+            i += 1
+            print(i, "/", len(files))
+
+    # Save all "ready" plots to review them
     save_plots = False
 
     if save_plots:
-        data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
-        subjects = os.listdir(data_path)
-        i = 1
+        data_path = root + "Data/tDCS_EEG_data/Epochs/116_seconds/"
+        files = os.listdir(data_path)
+        i = 0
         print("Saving figures")
 
-        for sub in subjects:
-            files = os.listdir(data_path + sub + "/")
-            ready_files = [f for f in files if f.__contains__("ready")]
-            for filename in ready_files:
-                ready_data = pd.read_csv(
-                    data_path + sub + "/" + filename, sep="\t", index_col=False
-                )
-                plot_record(ready_data, filename)
-                plt.savefig("Images/" + filename[:-4])
-                print(i)
-                i += 1
+        for filename in files:
+            ready_data = pd.read_csv(data_path + filename, sep="\t", index_col=False)
+            plot_record(ready_data, filename)
+            # plt.savefig("Images/" + filename[:-4])
+            plt.savefig(
+                "C:/Users/erlahrafnkels/Pictures/DepEEG_data_ready/" + filename[:-4]
+            )
+            i += 1
+            print(i)

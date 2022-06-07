@@ -139,3 +139,6 @@ Microsoft/*
 
 # This weird thing
 .DS_Store
+
+# This example
+vmd_example.py
