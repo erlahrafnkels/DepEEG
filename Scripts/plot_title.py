@@ -18,9 +18,9 @@ def make_plot_title(filename: str) -> str:
     else:
         h_or_d = "depressed"
     if pre_or_post == "pre":
-        pre_or_post = "Pretreatment"
+        pre_or_post = "Pre treatment"
     else:
-        pre_or_post = "Posttreatment"
+        pre_or_post = "Post treatment"
     if open_or_closed == "EO":
         open_or_closed = "eyes open"
     else:

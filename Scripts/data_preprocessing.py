@@ -498,6 +498,12 @@ if __name__ == "__main__":
             record = pd.read_csv(data_path + file, sep="\t", index_col=False)
             rec_cut_116s = cut_record_116s(record)
 
+            # Drop the T3 channel so it doesn't cause trouble later (is incorrectly referenced)
+            if "T3-A1" in rec_cut_116s.columns:
+                rec_cut_116s.drop(columns=["T3-A1"], inplace=True)
+            else:
+                rec_cut_116s.drop(columns=["T3-A2"], inplace=True)
+
             # Form filename
             name_split = file[:-4].split("_")
             sub_idx = name_split[0].find("S")
