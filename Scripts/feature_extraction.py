@@ -1,5 +1,6 @@
 import math as m
 import os
+import pickle
 import random
 from sys import platform
 
@@ -29,6 +30,11 @@ if platform == "darwin":
 recs116s = os.listdir(root + "116_seconds/")
 recs116s = sorted(list(set(recs116s) - set(noisy_recs)))
 
+recs116s_EC_pre = [r for r in recs116s if ("EC" in r) and ("pre" in r)]
+recs116s_EO_pre = [r for r in recs116s if ("EO" in r) and ("pre" in r)]
+recs116s_EC_post = [r for r in recs116s if ("EC" in r) and ("post" in r)]
+recs116s_EO_post = [r for r in recs116s if ("EO" in r) and ("post" in r)]
+
 """
 recs116s_y = []
 for r in recs116s:
@@ -46,133 +52,18 @@ def get_subject_id(filename: str) -> int:
     return id
 
 
-def create_combined_dfs():
-    # Let's create some combined dataframes
-    recs116s_EC_pre = [r for r in recs116s if ("EC" in r) and ("pre" in r)]
-    recs116s_EO_pre = [r for r in recs116s if ("EO" in r) and ("pre" in r)]
-    recs116s_EC_post = [r for r in recs116s if ("EC" in r) and ("post" in r)]
-    recs116s_EO_post = [r for r in recs116s if ("EO" in r) and ("post" in r)]
-
-    # -------------- EC PRE combined dataframe --------------
-
-    # Initialize
-    first_EC_pre = recs116s_EC_pre[0]
-    first_EC_pre_id = get_subject_id(first_EC_pre)
-    first_EC_pre_dep = 1 if "D" in first_EC_pre else 0
-    all_pre_EC_116s = pd.read_csv(
-        root + "116_seconds/" + first_EC_pre, sep="\t", index_col=False
-    )
-    all_pre_EC_116s["Subject_ID"] = first_EC_pre_id
-    all_pre_EC_116s["Depressed"] = first_EC_pre_dep
-
-    # Then append all other records with the same categorization
-    for file in recs116s_EC_pre:
-        if file == recs116s_EC_pre[0]:
-            continue
-        id = get_subject_id(file)
-        dep = 1 if "D" in file else 0
-        record = pd.read_csv(root + "116_seconds/" + file, sep="\t", index_col=False)
-        record["Subject_ID"] = id
-        record["Depressed"] = dep
-        all_pre_EC_116s = all_pre_EC_116s.append(record)
-
-    all_pre_EC_116s.to_csv(
-        root + "116_seconds/All_pre_EC_116s.txt", sep="\t", index=False
-    )
-    print("EC PRE combined dataframe SAVED.")
-
-    # -------------- EO PRE combined dataframe --------------
-
-    # Initialize
-    first_EO_pre = recs116s_EO_pre[0]
-    first_EO_pre_id = get_subject_id(first_EO_pre)
-    first_EO_pre_dep = 1 if "D" in first_EO_pre else 0
-    all_pre_EO_116s = pd.read_csv(
-        root + "116_seconds/" + first_EO_pre, sep="\t", index_col=False
-    )
-    all_pre_EO_116s["Subject_ID"] = first_EO_pre_id
-    all_pre_EO_116s["Depressed"] = first_EO_pre_dep
-
-    # Then append all other records with the same categorization
-    for file in recs116s_EO_pre:
-        if file == recs116s_EO_pre[0]:
-            continue
-        id = get_subject_id(file)
-        dep = 1 if "D" in file else 0
-        record = pd.read_csv(root + "116_seconds/" + file, sep="\t", index_col=False)
-        record["Subject_ID"] = id
-        record["Depressed"] = dep
-        all_pre_EO_116s = all_pre_EO_116s.append(record)
-
-    all_pre_EO_116s.to_csv(
-        root + "116_seconds/All_pre_EO_116s.txt", sep="\t", index=False
-    )
-    print("EO PRE combined dataframe SAVED.")
-
-    # -------------- EC POST combined dataframe --------------
-
-    # Initialize
-    first_EC_post = recs116s_EC_post[0]
-    first_EC_post_id = get_subject_id(first_EC_post)
-    first_EC_post_dep = 1 if "D" in first_EC_post else 0
-    all_post_EC_116s = pd.read_csv(
-        root + "116_seconds/" + first_EC_post, sep="\t", index_col=False
-    )
-    all_post_EC_116s["Subject_ID"] = first_EC_post_id
-    all_post_EC_116s["Depressed"] = first_EC_post_dep
-
-    # Then append all other records with the same categorization
-    for file in recs116s_EC_post:
-        if file == recs116s_EC_post[0]:
-            continue
-        id = get_subject_id(file)
-        dep = 1 if "D" in file else 0
-        record = pd.read_csv(root + "116_seconds/" + file, sep="\t", index_col=False)
-        record["Subject_ID"] = id
-        record["Depressed"] = dep
-        all_post_EC_116s = all_post_EC_116s.append(record)
-
-    all_post_EC_116s.to_csv(
-        root + "116_seconds/All_post_EC_116s.txt", sep="\t", index=False
-    )
-    print("EC POST combined dataframe SAVED.")
-
-    # -------------- EO POST combined dataframe --------------
-
-    # Initialize
-    first_EO_post = recs116s_EO_post[0]
-    first_EO_post_id = get_subject_id(first_EO_post)
-    first_EO_post_dep = 1 if "D" in first_EO_post else 0
-    all_post_EO_116s = pd.read_csv(
-        root + "116_seconds/" + first_EO_post, sep="\t", index_col=False
-    )
-    all_post_EO_116s["Subject_ID"] = first_EO_post_id
-    all_post_EO_116s["Depressed"] = first_EO_post_dep
-
-    # Then append all other records with the same categorization
-    for file in recs116s_EO_post:
-        if file == recs116s_EO_post[0]:
-            continue
-        id = get_subject_id(file)
-        dep = 1 if "D" in file else 0
-        record = pd.read_csv(root + "116_seconds/" + file, sep="\t", index_col=False)
-        record["Subject_ID"] = id
-        record["Depressed"] = dep
-        all_post_EO_116s = all_post_EO_116s.append(record)
-
-    all_post_EO_116s.to_csv(
-        root + "116_seconds/All_post_EO_116s.txt", sep="\t", index=False
-    )
-    print("EO POST combined dataframe SAVED.")
-
-    return
-
-
 # def make_epochs(record: pd.DataFrame, seconds: int):
 #    return record
 
 
 def split_train_test(recs: list, train_size: float) -> list[list, list]:
+    """
+    This function only works for un-epoched data (i.e. whole 116 s segments), at least for now.
+    For data in smaller segments, we have to make sure data from the same subject can't be present in
+    both train and test, only one of them, so there is no information leakage.
+
+    """
+
     # Start by splitting list into depressed and healthy so we get balanced sets
     d_set = [r for r in recs if "D" in r]
     h_set = [r for r in recs if "H" in r]
@@ -183,32 +74,54 @@ def split_train_test(recs: list, train_size: float) -> list[list, list]:
     h_train = random.sample(h_set, m.ceil(train_size * len(h_set)))
     h_test = list(set(h_set) - set(h_train))
 
+    # Put together
     train = d_train + h_train
     test = d_test + h_test
+
+    # Have only IDs in the lists
+    train = [get_subject_id(f) for f in train]
+    test = [get_subject_id(f) for f in test]
 
     return train, test
 
 
 if __name__ == "__main__":
-    # Check whether we have already made and saved the combined data files
-    check_file = root + "116_seconds/All_post_EC_116s.txt"
-    if not os.path.exists(check_file):
-        create_combined_dfs()
-
-    """
-    # Let's start by looking only at eyes closed data and pre, since we are working on task 1 (dep or healthy)
+    # Let's start by looking only at EYES CLOSED AND PRE DATA, since we are working on task 1 (dep or healthy)
     # Split into train and test sets
-    train, test = split_train_test(recs116s_EC_pre, 0.7)
+    # print(recs116s_EC_pre)
+    # recs116s_EC_pre_ids = [get_subject_id(f) for f in recs116s_EC_pre]
+    # train_ids, test_ids = split_train_test(recs116s_EC_pre, 0.7)
 
-    # Let's start by looking at these statistical features:
+    # Load the data from a pickle file
+    with open(root + "116_seconds" + "/all_116s.pickle", "rb") as f:
+        all_116s = pickle.load(f)
+
+    # Let's then start by looking at these statistical features:
     # The first four moments of distribution: Mean, variance, skewness and kurtosis
     # We start by taking the whole segment of each signal as it is, per channel
+    channel_names = all_116s.columns[:-4]
+    id_cols = list(all_116s.columns[-4:])
+    mean_names = ["Mean-" + chan for chan in channel_names]
+    var_names = ["Var-" + chan for chan in channel_names]
+    skew_names = ["Skew-" + chan for chan in channel_names]
+    kurt_names = ["Kurt-" + chan for chan in channel_names]
+    feature_names = mean_names + var_names + skew_names + kurt_names + id_cols
+
+    # Create empty dataframe for feature matrix
+    feature_df = pd.DataFrame(columns=feature_names)
+
+    print(feature_df.columns)
+
     means = []
     vars = []
     skews = []
     kurts = []
 
-    for file in train:
+    """
+    for id in recs116s_EC_pre_ids:
+        print(id)
+
+    for id in train:
         rec = pd.read_csv(root + "116_seconds/" + file, sep="\t", index_col=False)
         for col in rec:
             print(col)

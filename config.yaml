@@ -65,7 +65,7 @@ subject_classes:
     "S31", "S33", "S35", "S36", "S37", "S40", "S41", "S43", "S44", "S45"
   ]
 
-# Noisy records which should not be used
+# Noisy records which should be removed and not used
 noisy_recs: [
     "S1_pre_EC_DepActive_116s.txt", "S8_post_EC_DepActive_116s.txt", "S9_post_EC_Healthy_116s.txt",
     "S9_pre_EC_Healthy_116s.txt", "S9_pre_EO_Healthy_116s.txt", "S15_pre_EC_Healthy_116s.txt",
