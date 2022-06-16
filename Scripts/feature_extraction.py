@@ -2,19 +2,16 @@ import math as m
 import os
 import pickle
 import random
+from statistics import mean
+#import statistics as s
 from sys import platform
 
-import pandas as pd
-from omegaconf import OmegaConf
-
-"""
 import numpy as np
-import statistics as s
-import sklearn
-
-from scipy.stats import skew, kurtosis, zscore
-from vmdpy import VMD
-"""
+import pandas as pd
+# import sklearn
+from omegaconf import OmegaConf
+from scipy.stats import kurtosis, skew, zscore
+# from vmdpy import VMD
 
 # Get global variables and lists from the configuration file
 config = OmegaConf.load("config.yaml")
@@ -56,7 +53,7 @@ def get_subject_id(filename: str) -> int:
 #    return record
 
 
-def split_train_test(recs: list, train_size: float) -> list[list, list]:
+def split_train_test(recs: list, train_size: float): # -> list[list, list]:
     """
     This function only works for un-epoched data (i.e. whole 116 s segments), at least for now.
     For data in smaller segments, we have to make sure data from the same subject can't be present in
@@ -87,20 +84,18 @@ def split_train_test(recs: list, train_size: float) -> list[list, list]:
 
 if __name__ == "__main__":
     # Let's start by looking only at EYES CLOSED AND PRE DATA, since we are working on task 1 (dep or healthy)
-    # Split into train and test sets
-    # print(recs116s_EC_pre)
-    # recs116s_EC_pre_ids = [get_subject_id(f) for f in recs116s_EC_pre]
-    # train_ids, test_ids = split_train_test(recs116s_EC_pre, 0.7)
-
     # Load the data from a pickle file
-    with open(root + "116_seconds" + "/all_116s.pickle", "rb") as f:
-        all_116s = pickle.load(f)
+    with open(root + "116_seconds" + "/all_pre_EC_116s.pickle", "rb") as f:
+        all_pre_EC_116s = pickle.load(f)
+
+    # View data head
+    print(all_pre_EC_116s.head())
 
     # Let's then start by looking at these statistical features:
     # The first four moments of distribution: Mean, variance, skewness and kurtosis
     # We start by taking the whole segment of each signal as it is, per channel
-    channel_names = all_116s.columns[:-4]
-    id_cols = list(all_116s.columns[-4:])
+    channel_names = all_pre_EC_116s.columns[:-2]
+    id_cols = list(all_pre_EC_116s.columns[-2:])
     mean_names = ["Mean-" + chan for chan in channel_names]
     var_names = ["Var-" + chan for chan in channel_names]
     skew_names = ["Skew-" + chan for chan in channel_names]
@@ -109,13 +104,44 @@ if __name__ == "__main__":
 
     # Create empty dataframe for feature matrix
     feature_df = pd.DataFrame(columns=feature_names)
-
-    print(feature_df.columns)
-
+    print(feature_df)
+    # Make empty vectors to store features
     means = []
     vars = []
     skews = []
     kurts = []
+
+    # List of subject numbers and number of columns in data table
+    subject_ids = all_pre_EC_116s["Subject_ID"].unique()
+    print(len(subject_ids))
+    #cols = np.arange(all_pre_EC_116s.shape[1])
+    print(feature_df.columns)
+    print(all_pre_EC_116s.columns)
+
+    # Iterate over all subjects and get the stats for each channel, for each subject
+    for sub in subject_ids:
+        current_sub = all_pre_EC_116s[all_pre_EC_116s["Subject_ID"] == sub]
+        #current_sub = current_sub[:,:-2]
+        current_sub = current_sub.to_numpy()
+        current_sub = np.delete(current_sub, [30, 31], axis=1)
+        #print("Calculating for subject", sub)
+        means.append(np.mean(current_sub, axis=0))
+        print(np.mean(current_sub, axis=0).shape)
+        vars.append(np.var(current_sub, axis=0))
+        skews.append(skew(current_sub, axis=0))
+        kurts.append(kurtosis(current_sub, axis=0))
+        #for col in range(cols):
+        #    print(np.mean(current_sub[:,col]))
+        #    means.append(np.mean(current_sub[:,col]))
+        #    vars.append(np.var(current_sub[:,col]))
+        #    skews.append(skew(current_sub[:,col]))
+        #    kurts.append(kurtosis(current_sub[:,col]))
+
+    print(feature_df.shape)
+    print(len(means))
+    print(len(vars))
+    print(len(skews))
+    print(len(kurts))
 
     """
     for id in recs116s_EC_pre_ids:
