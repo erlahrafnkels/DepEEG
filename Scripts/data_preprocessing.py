@@ -49,7 +49,7 @@ if platform == "darwin":
     root = "/Users/erlahrafnkelsdottir/Documents/DepEEG/"
 
 
-def get_files(data_path: str) -> list:
+def get_files(data_path):
     subject_folders = os.listdir(data_path)
     txt_file_paths = []
 
@@ -69,7 +69,7 @@ def get_files(data_path: str) -> list:
     return txt_file_paths
 
 
-def update_filename(file: str) -> str:
+def update_filename(file):
     filename = os.path.basename(file)[:-4]
     subject = re.split("-|_", filename)[0]
     pre_or_post = ""
@@ -97,7 +97,7 @@ def update_filename(file: str) -> str:
     return new_filename, subject
 
 
-def correct_refs(df: pd.DataFrame) -> pd.DataFrame:
+def correct_refs(df):
     df.update(df[A1ref].sub(df["A1"], axis=0))
     df.columns = [x + "-A1" if x in A1ref else x for x in df]
     df.update(df[A2ref].sub(df["A2"], axis=0))
@@ -105,7 +105,7 @@ def correct_refs(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def clean_data(files: list):
+def clean_data(files):
     print("Cleaning data files.")
     for file in files:
         if ".txt" in file:
@@ -139,9 +139,7 @@ def clean_data(files: list):
     return
 
 
-def notch_filter(
-    data: pd.DataFrame, low_freq: float, high_freq: float
-) -> list[float, float, np.ndarray]:
+def notch_filter(data, low_freq, high_freq):
     notch_freq = 50  # Frequency to be removed from signal (Hz)
     quality_factor = (high_freq - low_freq) / m.sqrt(low_freq * high_freq)
     b_notch, a_notch = signal.iirnotch(notch_freq, quality_factor, samp_freq)
@@ -150,9 +148,7 @@ def notch_filter(
     return freq, h, signal_notched
 
 
-def butter_bandpass_filter(
-    data: np.ndarray, low_freq: float, high_freq: float, order: int = 5
-) -> np.ndarray:
+def butter_bandpass_filter(data, low_freq, high_freq, order=5):
     nyq = 0.5 * samp_freq
     low = low_freq / nyq
     high = high_freq / nyq
@@ -161,9 +157,7 @@ def butter_bandpass_filter(
     return y
 
 
-def filter_record(
-    filename: str, subject: str, low_freq: float, high_freq: float
-) -> pd.DataFrame:
+def filter_record(filename, subject, low_freq, high_freq):
     # Read in raw, cleaned data
     data_path = root + "Data/tDCS_EEG_data/Data_cleaned/" + subject + "/"
     data = pd.read_csv(data_path + filename, sep="\t", index_col=False)
@@ -179,7 +173,7 @@ def filter_record(
     return data
 
 
-def run_ICA(record: pd.DataFrame) -> list[pd.DataFrame, pd.DataFrame]:
+def run_ICA(record):
     ica = FastICA(random_state=42)
     comps_ = ica.fit_transform(record)  # Reconstruct signals (type: np.ndarray)
     mixing_ = ica.mixing_  # Get estimated mixing matrix (type: np.ndarray)
@@ -191,9 +185,7 @@ def run_ICA(record: pd.DataFrame) -> list[pd.DataFrame, pd.DataFrame]:
     return comps, mixing
 
 
-def plot_example_process(
-    filename: str, subject: str, low_freq: float, high_freq: float
-) -> plt.figure:
+def plot_example_process(filename, subject, low_freq, high_freq):
     # Read in raw, cleaned data
     data_path = root + "Data/tDCS_EEG_data/Data_cleaned/" + subject + "/"
     data = pd.read_csv(data_path + filename, sep="\t", index_col=False)
@@ -258,7 +250,7 @@ def plot_example_process(
     return fig
 
 
-def filter_and_ica(data_path: str, subjects: list):
+def filter_and_ica(data_path, subjects):
     for sub in subjects:
         files = os.listdir(data_path + sub + "/")
         for file in files:
@@ -283,12 +275,7 @@ def filter_and_ica(data_path: str, subjects: list):
     return
 
 
-def remove_artifacts(
-    record: pd.DataFrame,
-    ica_comps: pd.DataFrame,
-    ica_mixing: pd.DataFrame,
-    comp_ids: list,
-) -> list[pd.DataFrame, pd.DataFrame]:
+def remove_artifacts(record, ica_comps, ica_mixing, comp_ids):
     # Make copies of dataframes to make sure they are not overwritten
     rec_copy = record.copy()
     comps_copy = ica_comps.copy()
@@ -311,7 +298,7 @@ def remove_artifacts(
     return updated_comps, updated_rec
 
 
-def cut_record_116s(record: pd.DataFrame):
+def cut_record_116s(record):
     # Cut off first 4 seconds and cut off after 120 seconds
     begin = 4 * samp_freq
     end = 120 * samp_freq

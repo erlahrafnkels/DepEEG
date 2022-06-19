@@ -1,15 +1,19 @@
 import math as m
 import pickle
 import random
+import warnings
 from sys import platform
 
+# import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from omegaconf import OmegaConf
 from scipy.stats import kurtosis, skew, zscore
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
-# from vmdpy import VMD
+# from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from vmdpy import VMD
+
+warnings.filterwarnings("ignore")
 
 
 # Get global variables and lists from the configuration file
@@ -25,18 +29,46 @@ if platform == "darwin":
     root = "/Users/erlahrafnkelsdottir/Documents/DepEEG/" + root
 
 
-def get_subject_id(filename: str) -> int:
+def get_subject_id(filename):
     name_split = filename.split("_")
     subject = name_split[0][1:]
     id = int(subject)
     return id
 
 
-# def make_epochs(record: pd.DataFrame, seconds: int):
-#    return record
+def make_epochs(df, seconds, overlap):
+    # Input df: Table with all 116s for pre/post and EO/EC
+    subjects = df["Subject_ID"].unique()
+    step = int(seconds * overlap)
+    end = int(
+        (116 // seconds) * seconds + step
+    )  # Fix/check if i make different epochs than 10s!!
+    cuts = np.arange(0, end * samp_freq, step * samp_freq)
+    all_pre_EC_10s_epochs = pd.DataFrame(columns=df.columns)
+    all_pre_EC_10s_epochs["Epoch"] = None
+
+    s = 1
+    for subject in subjects:
+        current_sub = df[df["Subject_ID"] == subject]
+        epoch = 0
+        print(f"Making epochs for subject {s}/{subjects.shape[0]}")
+        for i in range(len(cuts[:-2])):
+            start = cuts[i]
+            end = cuts[i + 2]
+            current_epoch = current_sub.iloc[start:end, :]
+            current_epoch["Epoch"] = epoch
+            all_pre_EC_10s_epochs = all_pre_EC_10s_epochs.append(current_epoch)
+            epoch += 1
+        s += 1
+
+    # Save table as .pickle file
+    with open(root + "10_seconds" + "/all_pre_EC_10s_epochs.pickle", "wb") as f:
+        pickle.dump(all_pre_EC_10s_epochs, f)
+
+    return
 
 
-def split_train_test(recs: list, train_size: float):  # -> list[list, list]:
+def split_train_test(recs, train_size):
     """
     This function only works for un-epoched data (i.e. whole 116 s segments), at least for now.
     For data in smaller segments, we have to make sure data from the same subject can't be present in
@@ -54,10 +86,6 @@ def split_train_test(recs: list, train_size: float):  # -> list[list, list]:
         else:
             h_set.append(r)
 
-    # Start by splitting list into depressed and healthy so we get balanced sets
-    # d_set = [r for r in recs if r == 1]  # [r for r in recs if "D" in r]
-    # h_set = [r for r in recs if r == 0]  # [r for r in recs if "H" in r]
-
     # Because of random, we get new sets each time we run this
     d_train = random.sample(d_set, m.ceil(train_size * len(d_set)))
     d_test = list(set(d_set) - set(d_train))
@@ -67,10 +95,6 @@ def split_train_test(recs: list, train_size: float):  # -> list[list, list]:
     # Put together
     train = d_train + h_train
     test = d_test + h_test
-
-    # Have only IDs in the lists
-    # train = [get_subject_id(f) for f in train]
-    # test = [get_subject_id(f) for f in test]
 
     return train, test
 
@@ -142,18 +166,126 @@ if __name__ == "__main__":
     print("y train shape:\t", y_train.shape)
     print("y test shape:\t", y_test.shape)
 
+    print(feature_df.shape)
+
+    # ------------------------------------------------ VMD STUFF ------------------------------------------------
+
+    """
+    PAPER: Epilepsy seizure detection using kurtosis based VMD’s parameters selection and bandwidth features
+    AUTHORS: Sukriti, Monisha Chakraborty, Debjani Mitra
+
+    The proposed methodology is described as follows:
+
+    Step 1: A range of K and α is set such that K = 1–15 with an interval of 1 and α = 100–15000 with an interval
+            of 100.
+    Step 2: A new signal is formulated such that it consists of 10 s of EEG segments from each of the datasets
+            Z, F and S.
+    Step 3: The new signal is decomposed by VMD for all possible combinations of K and α to obtain K BIMFs.
+    Step 4: The BIMFs are then summed up to obtain the reconstruction signal for each decomposition.
+    Step 5: Kurtosis of each reconstructed signal is determined.
+    Step 6: The value of K and α for which kurtosis is maximum is recorded.
+    Step 7: Lastly, the five sets of EEG data (Z, O, N, F and S) are decomposed into BIMFs by VMD under the
+            recorded value of K and α.
+    """
+
+    # Step 1: Parameters for VMD proposed in the paper
+    K = np.arange(1, 16, 1)  # Number of decomposed nodes
+    alpha = np.arange(100, 15100, 100)  # Data-fidelity constraint parameter
+    tau = 0  # Time step of dual ascent
+    DC = 0  # Number of DC components
+    init = 1  # Value of initial frequency for the decomposed modes
+    tol = 1e-6  # Tolerance value for convergence criteria
+
+    # Step 2: Split data into 10-second epochs
+    # make_epochs(all_pre_EC_116s, 10, 0.5) --> Already done, comment out
+    with open(root + "10_seconds" + "/all_pre_EC_10s_epochs.pickle", "rb") as f:
+        all_pre_EC_10s_epochs = pickle.load(f)
+
+    # Step 3: Run VMD
+    # Outputs:
+    # u       - the collection of decomposed modes/BIMFs
+    # u_hat   - spectra of the modes
+    # omega   - estimated mode center-frequencies
+
+    epochs = all_pre_EC_10s_epochs["Epoch"].unique()
+    max_kurt = 0
+
+    for k in K:
+        for a in alpha:
+            kurt = random.randint(0, 25)
+            if kurt > max_kurt:
+                max_kurt = kurt
+            print(f"{k} \t {a} \t {max_kurt}")
+
+    u, u_hat, omega = VMD(f, alpha, tau, K, DC, init, tol)
+
+    """
+    # ------------------------------------------------ CLASSIFYING ------------------------------------------------
+
     # Try first classifier!!!
     LDA = LinearDiscriminantAnalysis()
     LDA.fit(X_train, y_train)
     print("--- TRUE ---")
-    print(y_test)
+    print(y_test.to_numpy())
     print("--- PREDICTION ---")
     print(LDA.predict(X_test))
     print("--- ACCURACY ---")
     print(LDA.score(X_test, y_test))
 
-    """
+    # ------------------------------------------------ PLOTTING ------------------------------------------------
+
+    mean_df = feature_df[feature_df.columns.intersection(mean_names + ["Depression"])]
+    var_df = feature_df[feature_df.columns.intersection(var_names + ["Depression"])]
+    skew_df = feature_df[feature_df.columns.intersection(skew_names + ["Depression"])]
+    kurt_df = feature_df[feature_df.columns.intersection(kurt_names + ["Depression"])]
+
+    mean_df_dep = mean_df[mean_df["Depression"] == 1].iloc[:, :-1]
+    mean_df_hel = mean_df[mean_df["Depression"] == 0].iloc[:, :-1]
+    var_df_dep = var_df[var_df["Depression"] == 1].iloc[:, :-1]
+    var_df_hel = var_df[var_df["Depression"] == 0].iloc[:, :-1]
+    skew_df_dep = skew_df[skew_df["Depression"] == 1].iloc[:, :-1]
+    skew_df_hel = skew_df[skew_df["Depression"] == 0].iloc[:, :-1]
+    kurt_df_dep = kurt_df[kurt_df["Depression"] == 1].iloc[:, :-1]
+    kurt_df_hel = kurt_df[kurt_df["Depression"] == 0].iloc[:, :-1]
+
+    fig, axs = plt.subplots(2, 3)
+
+    axs[0, 0].scatter(mean_df_dep, var_df_dep, label="D", s=5, color=config.colors.dtu_red)
+    axs[0, 0].scatter(mean_df_hel, var_df_hel, label="H", s=5, color=config.colors.bright_green)
+    axs[0, 0].legend(loc="upper right")
+    axs[0, 0].set_title("Mean vs. variance")
+
+    axs[0, 1].scatter(mean_df_dep, skew_df_dep, label="D", s=5, color=config.colors.dtu_red)
+    axs[0, 1].scatter(mean_df_hel, skew_df_hel, label="H", s=5, color=config.colors.bright_green)
+    axs[0, 1].legend(loc="upper right")
+    axs[0, 1].set_title("Mean vs. skewness")
+
+    axs[0, 2].scatter(mean_df_dep, kurt_df_dep, label="D", s=5, color=config.colors.dtu_red)
+    axs[0, 2].scatter(mean_df_hel, kurt_df_hel, label="H", s=5, color=config.colors.bright_green)
+    axs[0, 2].legend(loc="upper right")
+    axs[0, 2].set_title("Mean vs. kurtosis")
+
+    axs[1, 0].scatter(var_df_dep, skew_df_dep, label="D", s=5, color=config.colors.dtu_red)
+    axs[1, 0].scatter(var_df_hel, skew_df_hel, label="H", s=5, color=config.colors.bright_green)
+    axs[1, 0].legend(loc="upper right")
+    axs[1, 0].set_title("Variance vs. skewness")
+
+    axs[1, 1].scatter(var_df_dep, kurt_df_dep, label="D", s=5, color=config.colors.dtu_red)
+    axs[1, 1].scatter(var_df_hel, kurt_df_hel, label="H", s=5, color=config.colors.bright_green)
+    axs[1, 1].legend(loc="upper right")
+    axs[1, 1].set_title("Variance vs. kurtosis")
+
+    axs[1, 2].scatter(skew_df_dep, kurt_df_dep, label="D", s=5, color=config.colors.dtu_red)
+    axs[1, 2].scatter(skew_df_hel, kurt_df_hel, label="H", s=5, color=config.colors.bright_green)
+    axs[1, 2].legend(loc="upper right")
+    axs[1, 2].set_title("Skewness vs. kurtosis")
+
+    plt.suptitle("Eyes open pre-treatment data features", fontsize="x-large")
+
+    plt.show()
+
     # ------------------------------ MODEL WITH NUMPY ------------------------------
+
     # And convert back to numpy for the classification
     # --- I know going back and forth is a little stupid but I don't have time to optimize :') ---
     X_train = features_train.to_numpy()
@@ -175,14 +307,4 @@ if __name__ == "__main__":
     print(LDA.predict(X_test))
     print("--- ACCURACY ---")
     print(LDA.score(X_test, y_test))
-
-    # ------------------------------ VMD STUFF------------------------------
-
-    # Parameters for VMD as proposed from epilepsy paper
-    K = np.arange(1, 16, 1)                  # Number of decomposed nodes
-    alpha = np.arange(100, 15000, 100)       # Data-fidelity constraint parameter
-    tau = 0                                  # Time step of dual ascent
-    DC = 0                                   # Number of DC components
-    init = 1                                 # Value of initial frequency for the decomposed modes
-    tol = 1e-6                               # Tolerance value for convergence criteria
     """

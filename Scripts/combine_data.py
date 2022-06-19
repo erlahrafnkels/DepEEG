@@ -23,7 +23,7 @@ recs116s_EC_post = [r for r in recs116s if ("EC" in r) and ("post" in r)]
 recs116s_EO_post = [r for r in recs116s if ("EO" in r) and ("post" in r)]
 
 
-def get_subject_id(filename: str) -> int:
+def get_subject_id(filename):
     name_split = filename.split("_")
     subject = name_split[0][1:]
     id = int(subject)
