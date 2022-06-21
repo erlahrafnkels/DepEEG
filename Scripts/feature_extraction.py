@@ -1,7 +1,8 @@
-import math as m
+# import math as m
 import pickle
 import random
 import warnings
+from datetime import datetime
 from sys import platform
 
 # import matplotlib.pyplot as plt
@@ -9,8 +10,6 @@ import numpy as np
 import pandas as pd
 from omegaconf import OmegaConf
 from scipy.stats import kurtosis, skew, zscore
-
-# from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from vmdpy import VMD
 
 warnings.filterwarnings("ignore")
@@ -19,21 +18,20 @@ warnings.filterwarnings("ignore")
 # Get global variables and lists from the configuration file
 config = OmegaConf.load("config.yaml")
 samp_freq = config.sample_frequency
-noisy_recs = config.noisy_recs
 healthy_num = config.subject_classes.healthy_num
 depressed_num = config.subject_classes.depressed_num
 
 # Get root folder based on which operating system I'm working on
-root = "Data/tDCS_EEG_data/Epochs/"
+root = "Data/tDCS_EEG_data/"
 if platform == "darwin":
     root = "/Users/erlahrafnkelsdottir/Documents/DepEEG/" + root
 
 
-def get_subject_id(filename):
-    name_split = filename.split("_")
-    subject = name_split[0][1:]
-    id = int(subject)
-    return id
+# def get_subject_id(filename):
+#     name_split = filename.split("_")
+#     subject = name_split[0][1:]
+#     id = int(subject)
+#     return id
 
 
 def make_epochs(df, seconds, overlap):
@@ -62,47 +60,16 @@ def make_epochs(df, seconds, overlap):
         s += 1
 
     # Save table as .pickle file
-    with open(root + "10_seconds" + "/all_pre_EC_10s_epochs.pickle", "wb") as f:
+    with open(root + "Epochs/10_seconds" + "/all_pre_EC_10s_epochs.pickle", "wb") as f:
         pickle.dump(all_pre_EC_10s_epochs, f)
 
     return
 
 
-def split_train_test(recs, train_size):
-    """
-    This function only works for un-epoched data (i.e. whole 116 s segments), at least for now.
-    For data in smaller segments, we have to make sure data from the same subject can't be present in
-    both train and test, only one of them, so there is no information leakage.
-
-    """
-
-    # Start by splitting list into depressed and healthy so we get balanced sets
-    d_set = []
-    h_set = []
-
-    for r in recs:
-        if r in healthy_num:
-            d_set.append(r)
-        else:
-            h_set.append(r)
-
-    # Because of random, we get new sets each time we run this
-    d_train = random.sample(d_set, m.ceil(train_size * len(d_set)))
-    d_test = list(set(d_set) - set(d_train))
-    h_train = random.sample(h_set, m.ceil(train_size * len(h_set)))
-    h_test = list(set(h_set) - set(h_train))
-
-    # Put together
-    train = d_train + h_train
-    test = d_test + h_test
-
-    return train, test
-
-
 if __name__ == "__main__":
     # Let's start by looking only at EYES CLOSED AND PRE DATA, since we are working on task 1 (dep or healthy)
     # Load the data from a pickle file
-    with open(root + "116_seconds" + "/all_pre_EC_116s.pickle", "rb") as f:
+    with open(root + "Epochs/116_seconds" + "/all_pre_EC_116s.pickle", "rb") as f:
         all_pre_EC_116s = pickle.load(f)
 
     # Let's then start by looking at these statistical features:
@@ -152,21 +119,19 @@ if __name__ == "__main__":
     feature_df["Subject_ID"] = targets[:, 0]
     feature_df["Depression"] = targets[:, 1]
 
-    # Split into train and test
-    train, test = split_train_test(targets[:, 0], 0.7)
-    X_train = feature_df[feature_df["Subject_ID"].isin(train)]
-    y_train = X_train["Depression"]
-    X_train = X_train.iloc[:, :-2]
-    X_test = feature_df[feature_df["Subject_ID"].isin(test)]
-    y_test = X_test["Depression"]
-    X_test = X_test.iloc[:, :-2]
+    save_features = True
+    if save_features:
+        # Datetime object containing current date and time, for saving feature_df files
+        now = datetime.now()
+        dt_string = now.strftime("%d.%m.%y_%H:%M:%S")
 
-    print("X train shape:\t", X_train.shape)
-    print("X test shape:\t", X_test.shape)
-    print("y train shape:\t", y_train.shape)
-    print("y test shape:\t", y_test.shape)
+        # Save feature matrix as .pickle file
+        with open(
+            root + "Features_and_output" + f"/feature_df_{dt_string}.pickle", "wb"
+        ) as f:
+            pickle.dump(feature_df, f)
 
-    print(feature_df.shape)
+        print("Feature matrix saved.")
 
     # ------------------------------------------------ VMD STUFF ------------------------------------------------
 
@@ -198,7 +163,7 @@ if __name__ == "__main__":
 
     # Step 2: Split data into 10-second epochs
     # make_epochs(all_pre_EC_116s, 10, 0.5) --> Already done, comment out
-    with open(root + "10_seconds" + "/all_pre_EC_10s_epochs.pickle", "rb") as f:
+    with open(root + "Epochs/10_seconds" + "/all_pre_EC_10s_epochs.pickle", "rb") as f:
         all_pre_EC_10s_epochs = pickle.load(f)
 
     # Step 3: Run VMD
@@ -220,18 +185,6 @@ if __name__ == "__main__":
     u, u_hat, omega = VMD(f, alpha, tau, K, DC, init, tol)
 
     """
-    # ------------------------------------------------ CLASSIFYING ------------------------------------------------
-
-    # Try first classifier!!!
-    LDA = LinearDiscriminantAnalysis()
-    LDA.fit(X_train, y_train)
-    print("--- TRUE ---")
-    print(y_test.to_numpy())
-    print("--- PREDICTION ---")
-    print(LDA.predict(X_test))
-    print("--- ACCURACY ---")
-    print(LDA.score(X_test, y_test))
-
     # ------------------------------------------------ PLOTTING ------------------------------------------------
 
     mean_df = feature_df[feature_df.columns.intersection(mean_names + ["Depression"])]
