@@ -4,17 +4,17 @@ import random
 import warnings
 from sys import platform
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
+import numpy as np
 from mrmr import mrmr_classif
-# import numpy as np
 # import pandas as pd
 from omegaconf import OmegaConf
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import (ConfusionMatrixDisplay,  # , accuracy_score
-                             confusion_matrix)
-from sklearn.model_selection import cross_val_score  # , cross_validate
-from sklearn.model_selection import GroupKFold, LeaveOneGroupOut
+# from sklearn.metrics import (ConfusionMatrixDisplay, accuracy_score,
+#                              confusion_matrix)
+from sklearn.model_selection import (GroupKFold, LeaveOneGroupOut,
+                                     cross_validate)  # cross_val_score
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
@@ -81,17 +81,18 @@ if __name__ == "__main__":
 
     # K is how many features we want
     # Using MRMR (Minimum Redundancy - Maximum Relevance)
-    selected_features = mrmr_classif(X=X, y=y, K=20)
+    selected_features = mrmr_classif(X=X, y=y, K=10)
 
     # Make feature matrix which has only top K features
     chosen_columns = selected_features + ["Subject_ID", "Depression"]
     select_features_df = feature_df[feature_df.columns.intersection(chosen_columns)]
 
     # Update feature matrix and target vector
-    X = select_features_df.iloc[:, :-2]
-    y = select_features_df["Depression"]
-    groups = select_features_df["Subject_ID"]
+    X = select_features_df.iloc[:, :-2].to_numpy()
+    y = select_features_df["Depression"].to_numpy()
+    groups = select_features_df["Subject_ID"].to_numpy()
 
+    """
     # ---------------------- SPLITTING INTO TRAIN AND TEST SETS ----------------------
 
     # Split into train and test
@@ -113,12 +114,14 @@ if __name__ == "__main__":
     print("y train shape:\t", y_train.shape)
     print("y test shape:\t", y_test.shape)
     print()
+    """
 
     # --------------------------------- CLASSIFYING ----------------------------------
 
     clf_names = [
         "Linear discriminant analysis (LDA)",
-        "Support vector machine (SVM)",
+        "RBF support vector machine (RBFSVM)",
+        "Linear support vector machine RBF (LSVM)",
         "K-nearest neighbors (KNN)",
         "Decision tree (DT)",
         "Random forest (RF)",
@@ -126,7 +129,8 @@ if __name__ == "__main__":
 
     classifiers = [
         LinearDiscriminantAnalysis(),
-        SVC(),
+        SVC(kernel="rbf"),
+        SVC(kernel="linear"),
         KNeighborsClassifier(),
         DecisionTreeClassifier(),
         RandomForestClassifier(),
@@ -138,8 +142,59 @@ if __name__ == "__main__":
     logo = LeaveOneGroupOut()
     gkf = GroupKFold(n_splits=10)
 
+    # print("GKF SPLIT:")
+    for train_index, test_index in gkf.split(X, y, groups):
+        # print("TRAIN:", train_index, "TEST:", test_index)
+        X_train, X_test = X[train_index], X[test_index]
+        y_train, y_test = y[train_index], y[test_index]
+        # print(X_train, X_test, y_train, y_test)
+
+    # for train, test in gkf.split(X, y, groups=groups):
+    #      print("%s %s" % (train, test))
+
+    # Iterate over classifiers
+    for name, clf in zip(clf_names, classifiers):
+        # scores = cross_val_score(clf, X, y, groups=groups, scoring="accuracy", cv=gkf, n_jobs=-1)
+        scoring = ["accuracy", "precision", "recall", "f1"]
+        scores = cross_validate(
+            clf,
+            X,
+            y,
+            groups=groups,
+            scoring=scoring,
+            cv=logo,
+            n_jobs=-1,
+            return_train_score=True,
+        )
+        print(name)
+        # print(scores.keys())
+        # print("%0.3f accuracy with a standard deviation of %0.3f" % (scores.mean(), scores.std()))
+        # print("Accuracy:", clf.score(X_test, y_test))
+        # print('Accuracy: %.3f (%.3f)' % (np.mean(scores), np.std(scores)))
+        print(
+            "Train accuracy: %.3f (%.3f)"
+            % (np.mean(scores["train_accuracy"]), np.std(scores["train_accuracy"]))
+        )
+        print(
+            "Test accuracy: %.3f (%.3f)"
+            % (np.mean(scores["test_accuracy"]), np.std(scores["test_accuracy"]))
+        )
+
+        # final_model = cross_val.best_estimator_
+        # clf.fit(X_train, y_train)
+        # train_predictions = clf.predict(X_train)
+        # val_predictions = final_model.predict(X_val)
+        # test_predictions = clf.predict(X_test)
+
+        # print('Train Score:', accuracy_score(train_predictions, y_train)) # .99
+        # print('Val Score:', accuracy_score(val_predictions, y_val)) # .89
+        # print('Test Score:', accuracy_score(test_predictions, y_test)) # .8
+
+        print()
+
+    """
     # Empty array to fill with predictions from each model
-    preds = []
+    # preds = []
 
     # Iterate over classifiers
     for name, clf in zip(clf_names, classifiers):
@@ -161,11 +216,11 @@ if __name__ == "__main__":
 
     # print(preds)
 
-    cm = confusion_matrix(y_test, preds[0])
-    cm_display = ConfusionMatrixDisplay(cm).plot()
-    plt.show()
+    # cm = confusion_matrix(y_test, preds[0])
+    # cm_display = ConfusionMatrixDisplay(cm).plot()
+    # plt.show()
 
-    """
+
     clf.fit(X_train, y_train)
     print(f"----------- {name} -----------")
     print("--- True:")
