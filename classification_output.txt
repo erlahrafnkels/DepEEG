@@ -1,0 +1,151 @@
+------ NEW RUN: 22.06.22 23:22:41 ------------------------------------------
+Selected features: ['Skew-T6-A2', 'Skew-F8-A2', 'Kurt-F3-A1', 'Var-Fp2-A2', 'Skew-FT7-A1', 'Kurt-F7-A1', 'Kurt-FC3-A1', 'Var-FT8-A2', 'Skew-CP4-A2', 'Var-F8-A2']
+
+Linear discriminant analysis (LDA)
+----------------------------------------
+Mean Train Accuracy 	0.879
+Mean Train Precision 	0.892
+Mean Train Recall 		0.842
+Mean Train F1 Score 	0.866
+Mean Val Accuracy 		0.78
+Mean Val Precision 		 0.341
+Mean Val Recall 		 0.341
+Mean Val F1 Score		 0.341
+Test prediction:		0.5
+
+RBF support vector machine (RBFSVM)
+----------------------------------------
+Mean Train Accuracy 	0.638
+Mean Train Precision 	0.832
+Mean Train Recall 		0.272
+Mean Train F1 Score 	0.409
+Mean Val Accuracy 		0.61
+Mean Val Precision 		 0.098
+Mean Val Recall 		 0.098
+Mean Val F1 Score		 0.098
+Test prediction:		0.75
+
+Linear support vector machine RBF (LSVM)
+----------------------------------------
+Mean Train Accuracy 	0.708
+Mean Train Precision 	0.832
+Mean Train Recall 		0.464
+Mean Train F1 Score 	0.595
+Mean Val Accuracy 		0.61
+Mean Val Precision 		 0.122
+Mean Val Recall 		 0.122
+Mean Val F1 Score		 0.122
+Test prediction:		0.75
+
+K-nearest neighbors (KNN)
+----------------------------------------
+Mean Train Accuracy 	0.783
+Mean Train Precision 	0.818
+Mean Train Recall 		0.684
+Mean Train F1 Score 	0.744
+Mean Val Accuracy 		0.683
+Mean Val Precision 		 0.244
+Mean Val Recall 		 0.244
+Mean Val F1 Score		 0.244
+Test prediction:		0.75
+
+Decision tree (DT)
+----------------------------------------
+Mean Train Accuracy 	1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Val Accuracy 		0.341
+Mean Val Precision 		 0.195
+Mean Val Recall 		 0.195
+Mean Val F1 Score		 0.195
+Test prediction:		0.5
+
+Random forest (RF)
+----------------------------------------
+Mean Train Accuracy 	1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Val Accuracy 		0.61
+Mean Val Precision 		 0.22
+Mean Val Recall 		 0.22
+Mean Val F1 Score		 0.22
+Test prediction:		0.75
+
+------ NEW RUN: 22.06.22 23:27:23 ------------------------------------------
+Selected features (15):
+['Skew-T6-A2', 'Skew-F8-A2', 'Kurt-F3-A1', 'Var-Fp2-A2', 'Skew-FT7-A1', 'Kurt-F7-A1', 'Kurt-FC3-A1', 'Var-FT8-A2', 'Skew-CP4-A2', 'Var-F8-A2', 'Skew-Pz-A2', 'Skew-FCz-A1', 'Kurt-FC4-A2', 'Var-T4-A2', 'Skew-O1-A1']
+
+Linear discriminant analysis (LDA)
+----------------------------------------
+Mean Train Accuracy 	0.9
+Mean Train Precision 	0.937
+Mean Train Recall 		0.841
+Mean Train F1 Score 	0.886
+Mean Val Accuracy 		0.732
+Mean Val Precision 		 0.293
+Mean Val Recall 		 0.293
+Mean Val F1 Score		 0.293
+Test prediction:		0.5
+
+RBF support vector machine (RBFSVM)
+----------------------------------------
+Mean Train Accuracy 	0.641
+Mean Train Precision 	0.84
+Mean Train Recall 		0.279
+Mean Train F1 Score 	0.417
+Mean Val Accuracy 		0.61
+Mean Val Precision 		 0.098
+Mean Val Recall 		 0.098
+Mean Val F1 Score		 0.098
+Test prediction:		0.75
+
+Linear support vector machine RBF (LSVM)
+----------------------------------------
+Mean Train Accuracy 	0.726
+Mean Train Precision 	0.854
+Mean Train Recall 		0.499
+Mean Train F1 Score 	0.625
+Mean Val Accuracy 		0.585
+Mean Val Precision 		 0.098
+Mean Val Recall 		 0.098
+Mean Val F1 Score		 0.098
+Test prediction:		0.75
+
+K-nearest neighbors (KNN)
+----------------------------------------
+Mean Train Accuracy 	0.783
+Mean Train Precision 	0.818
+Mean Train Recall 		0.684
+Mean Train F1 Score 	0.744
+Mean Val Accuracy 		0.683
+Mean Val Precision 		 0.244
+Mean Val Recall 		 0.244
+Mean Val F1 Score		 0.244
+Test prediction:		0.75
+
+Decision tree (DT)
+----------------------------------------
+Mean Train Accuracy 	1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Val Accuracy 		0.415
+Mean Val Precision 		 0.195
+Mean Val Recall 		 0.195
+Mean Val F1 Score		 0.195
+Test prediction:		0.75
+
+Random forest (RF)
+----------------------------------------
+Mean Train Accuracy 	1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Val Accuracy 		0.707
+Mean Val Precision 		 0.317
+Mean Val Recall 		 0.317
+Mean Val F1 Score		 0.317
+Test prediction:		0.75
+

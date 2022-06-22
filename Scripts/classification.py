@@ -1,20 +1,24 @@
-import math as m
 import pickle
-import random
 import warnings
+from datetime import datetime
 from sys import platform
 
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import numpy as np
 from mrmr import mrmr_classif
+
 # import pandas as pd
 from omegaconf import OmegaConf
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.ensemble import RandomForestClassifier
+
 # from sklearn.metrics import (ConfusionMatrixDisplay, accuracy_score,
 #                              confusion_matrix)
-from sklearn.model_selection import (GroupKFold, LeaveOneGroupOut,
-                                     cross_validate)  # cross_val_score
+from sklearn.model_selection import (  # StratifiedGroupKFold, cross_val_score
+    GroupKFold,
+    LeaveOneGroupOut,
+    cross_validate,
+)
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
@@ -35,35 +39,48 @@ if platform == "darwin":
     root = "/Users/erlahrafnkelsdottir/Documents/DepEEG/" + root
 
 
-def split_train_test(recs, train_size):
-    """
-    This function only works for un-epoched data (i.e. whole 116 s segments), at least for now.
-    For data in smaller segments, we have to make sure data from the same subject can't be present in
-    both train and test, only one of them, so there is no information leakage.
+def plot_features_hist(feature_h, feature_d, bins, title):
+    # Plot a histogram comparing a feature between healthy and depressed
+    fig = plt.figure(figsize=(12, 8))
+    n_d, _, _ = plt.hist(
+        x=feature_d,
+        bins=bins,
+        color=config.colors.dtu_red,
+        alpha=0.7,
+        rwidth=0.85,
+        label="Depressed",
+    )
+    n_h, _, _ = plt.hist(
+        x=feature_h,
+        bins=bins,
+        color=config.colors.blue,
+        alpha=0.7,
+        rwidth=0.85,
+        label="Healthy",
+    )
+    plt.grid(axis="y", alpha=0.5)
+    plt.xlabel("Value (normalized)")
+    plt.ylabel("Frequency")
+    plt.title(title)
+    plt.legend()
+    maxfreq = max(n_d.max(), n_h.max())
+    # Set a clean upper y-axis limit.
+    plt.ylim(ymax=np.ceil(maxfreq / 10) * 10 if maxfreq % 10 else maxfreq + 10)
 
-    """
+    return fig
 
-    # Start by splitting list into depressed and healthy so we get balanced sets
-    d_set = []
-    h_set = []
 
-    for r in recs:
-        if r in healthy_num:
-            d_set.append(r)
-        else:
-            h_set.append(r)
-
-    # Because of random, we get new sets each time we run this
-    d_train = random.sample(d_set, m.ceil(train_size * len(d_set)))
-    d_test = list(set(d_set) - set(d_train))
-    h_train = random.sample(h_set, m.ceil(train_size * len(h_set)))
-    h_test = list(set(h_set) - set(h_train))
-
-    # Put together
-    train = d_train + h_train
-    test = d_test + h_test
-
-    return train, test
+def CV_output(scores):
+    return [
+        f"Mean Train Accuracy \t{round(scores['train_accuracy'].mean(), 3)}",
+        f"Mean Train Precision \t{round(scores['train_precision'].mean(), 3)}",
+        f"Mean Train Recall \t\t{round(scores['train_recall'].mean(), 3)}",
+        f"Mean Train F1 Score \t{round(scores['train_f1'].mean(), 3)}",
+        f"Mean Val Accuracy \t\t{round(scores['test_accuracy'].mean(), 3)}",
+        f"Mean Val Precision \t\t {round(scores['test_precision'].mean(), 3)}",
+        f"Mean Val Recall \t\t {round(scores['test_recall'].mean(), 3)}",
+        f"Mean Val F1 Score\t\t {round(scores['test_f1'].mean(), 3)}",
+    ]
 
 
 if __name__ == "__main__":
@@ -77,11 +94,38 @@ if __name__ == "__main__":
     X = feature_df.iloc[:, :-2]
     y = feature_df["Depression"]
 
+    # ---------------------------- PLOT FEATURES ---------------------------------
+
+    feature_df_h = feature_df[feature_df["Depression"] == 0]
+    feature_df_d = feature_df[feature_df["Depression"] == 1]
+
+    mean_cols = [col for col in X.columns if "Mean" in col]
+    mean_df_h = feature_df_h[feature_df_h.columns.intersection(mean_cols)].stack()
+    mean_df_d = feature_df_d[feature_df_d.columns.intersection(mean_cols)].stack()
+
+    var_cols = [col for col in X.columns if "Var" in col]
+    var_df_h = feature_df_h[feature_df_h.columns.intersection(var_cols)].stack()
+    var_df_d = feature_df_d[feature_df_d.columns.intersection(var_cols)].stack()
+
+    skew_cols = [col for col in X.columns if "Skew" in col]
+    skew_df_h = feature_df_h[feature_df_h.columns.intersection(skew_cols)].stack()
+    skew_df_d = feature_df_d[feature_df_d.columns.intersection(skew_cols)].stack()
+
+    kurt_cols = [col for col in X.columns if "Kurt" in col]
+    kurt_df_h = feature_df_h[feature_df_h.columns.intersection(kurt_cols)].stack()
+    kurt_df_d = feature_df_d[feature_df_d.columns.intersection(kurt_cols)].stack()
+
+    plot_features_hist(mean_df_h, mean_df_d, "auto", "All channel means")
+    plot_features_hist(var_df_h, var_df_d, "auto", "All channel variances")
+    plot_features_hist(skew_df_h, skew_df_d, "auto", "All channel skewnesses")
+    plot_features_hist(kurt_df_h, kurt_df_d, "auto", "All channel kurtoses")
+    # plt.show()
+
     # ---------------------------- FEATURE SELECTION ---------------------------------
 
-    # K is how many features we want
+    # K is how many features we want to be chosen
     # Using MRMR (Minimum Redundancy - Maximum Relevance)
-    selected_features = mrmr_classif(X=X, y=y, K=10)
+    selected_features = mrmr_classif(X=X, y=y, K=15)
 
     # Make feature matrix which has only top K features
     chosen_columns = selected_features + ["Subject_ID", "Depression"]
@@ -91,30 +135,6 @@ if __name__ == "__main__":
     X = select_features_df.iloc[:, :-2].to_numpy()
     y = select_features_df["Depression"].to_numpy()
     groups = select_features_df["Subject_ID"].to_numpy()
-
-    """
-    # ---------------------- SPLITTING INTO TRAIN AND TEST SETS ----------------------
-
-    # Split into train and test
-    train, test = split_train_test(select_features_df["Subject_ID"], 0.7)
-
-    # Make train sets
-    X_train = select_features_df[select_features_df["Subject_ID"].isin(train)]
-    y_train = X_train["Depression"]
-    X_train = X_train.iloc[:, :-2]  # Remove ID columns
-
-    # Make test sets
-    X_test = select_features_df[select_features_df["Subject_ID"].isin(test)]
-    y_test = X_test["Depression"]
-    X_test = X_test.iloc[:, :-2]  # Remove ID columns
-
-    # View dimensions
-    print("X train shape:\t", X_train.shape)
-    print("X test shape:\t", X_test.shape)
-    print("y train shape:\t", y_train.shape)
-    print("y test shape:\t", y_test.shape)
-    print()
-    """
 
     # --------------------------------- CLASSIFYING ----------------------------------
 
@@ -140,7 +160,7 @@ if __name__ == "__main__":
     # can not be present both in train and test sets
     # This matters when/if we will use epoched data
     logo = LeaveOneGroupOut()
-    gkf = GroupKFold(n_splits=10)
+    gkf = GroupKFold(n_splits=10)  # StratifiedGroupKFold(n_splits=10)
 
     # print("GKF SPLIT:")
     for train_index, test_index in gkf.split(X, y, groups):
@@ -151,6 +171,20 @@ if __name__ == "__main__":
 
     # for train, test in gkf.split(X, y, groups=groups):
     #      print("%s %s" % (train, test))
+    # Datetime object containing current date and time, for saving feature_df files
+    write_output = False
+    if write_output:
+        now = datetime.now()
+        dt_string = now.strftime("%d.%m.%y %H:%M:%S")
+        with open("classification_output.txt", "a") as o:
+            o.write(
+                "------ NEW RUN: "
+                + dt_string
+                + " ------------------------------------------\n"
+            )
+            o.write("Selected features (" + str(len(selected_features)) + "):\n")
+            o.write(str(selected_features) + "\n")
+            o.write("\n")
 
     # Iterate over classifiers
     for name, clf in zip(clf_names, classifiers):
@@ -162,23 +196,55 @@ if __name__ == "__main__":
             y,
             groups=groups,
             scoring=scoring,
-            cv=logo,
+            cv=gkf,
             n_jobs=-1,
             return_train_score=True,
         )
+
+        clf.fit(X_train, y_train)
+        y_pred = clf.predict(X_test)
+        pred_acc = clf.score(X_test, y_test)
+
         print(name)
+        print("--------------------------------------")
+        print(X_train.shape)
+        print(X_test.shape)
+        print(y_train.shape)
+        print(y_test.shape)
+        # print("Train accuracies:", scores["train_accuracy"])
+        # print("Test accuracies:", scores["test_accuracy"])
+        print("--- True:")
+        print(y_test)
+        print("--- Prediction:")
+        print(y_pred)
+        print("--- Accuracy:")
+        print(pred_acc)
+        print()
+
+        if write_output:
+            output = CV_output(scores)
+            with open("classification_output.txt", "a") as o:
+                o.write(name + "\n")
+                o.write("----------------------------------------" + "\n")
+                for i in output:
+                    o.write(i + "\n")
+                p = str("Test prediction:\t\t" + str(y_pred))
+                o.write(p + "\n")
+                o.write("\n")
+
+    """
         # print(scores.keys())
         # print("%0.3f accuracy with a standard deviation of %0.3f" % (scores.mean(), scores.std()))
         # print("Accuracy:", clf.score(X_test, y_test))
         # print('Accuracy: %.3f (%.3f)' % (np.mean(scores), np.std(scores)))
-        print(
-            "Train accuracy: %.3f (%.3f)"
-            % (np.mean(scores["train_accuracy"]), np.std(scores["train_accuracy"]))
-        )
-        print(
-            "Test accuracy: %.3f (%.3f)"
-            % (np.mean(scores["test_accuracy"]), np.std(scores["test_accuracy"]))
-        )
+        #print(
+        #    "Train accuracy: %.3f (%.3f)"
+        #    % (np.mean(scores["train_accuracy"]), np.std(scores["train_accuracy"]))
+        #)
+        #print(
+        #    "Test accuracy: %.3f (%.3f)"
+        #    % (np.mean(scores["test_accuracy"]), np.std(scores["test_accuracy"]))
+        #)
 
         # final_model = cross_val.best_estimator_
         # clf.fit(X_train, y_train)
@@ -190,9 +256,7 @@ if __name__ == "__main__":
         # print('Val Score:', accuracy_score(val_predictions, y_val)) # .89
         # print('Test Score:', accuracy_score(test_predictions, y_test)) # .8
 
-        print()
 
-    """
     # Empty array to fill with predictions from each model
     # preds = []
 

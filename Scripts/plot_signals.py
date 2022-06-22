@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from omegaconf import OmegaConf
 from plot_title import make_plot_title
 
@@ -9,7 +8,7 @@ samp_freq = config.sample_frequency
 color_codes = [c[1] for c in config.colors.items()]
 
 
-def plot_record(record: pd.DataFrame, filename: str) -> plt.figure:
+def plot_record(record, filename):
     # Set up x-axis in time domain
     channels = record.shape[1]
     datapoints = record.shape[0]
