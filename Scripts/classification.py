@@ -1,4 +1,5 @@
 import pickle
+import sys
 import warnings
 from datetime import datetime
 from sys import platform
@@ -6,24 +7,18 @@ from sys import platform
 import matplotlib.pyplot as plt
 import numpy as np
 from mrmr import mrmr_classif
-
-# import pandas as pd
 from omegaconf import OmegaConf
+from scipy.stats import zscore
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.ensemble import RandomForestClassifier
-
-# from sklearn.metrics import (ConfusionMatrixDisplay, accuracy_score,
-#                              confusion_matrix)
-from sklearn.model_selection import (  # StratifiedGroupKFold, cross_val_score
-    GroupKFold,
-    LeaveOneGroupOut,
-    cross_validate,
-)
+from sklearn.ensemble import RandomForestClassifier, VotingClassifier
+from sklearn.model_selection import (GroupKFold, LeaveOneGroupOut,
+                                     cross_validate)
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
 warnings.filterwarnings("ignore")
+sys.setrecursionlimit(3 * sys.getrecursionlimit())
 
 
 # Get global variables and lists from the configuration file
@@ -41,7 +36,7 @@ if platform == "darwin":
 
 def plot_features_hist(feature_h, feature_d, bins, title):
     # Plot a histogram comparing a feature between healthy and depressed
-    fig = plt.figure(figsize=(12, 8))
+    fig = plt.figure(figsize=(10, 6))
     n_d, _, _ = plt.hist(
         x=feature_d,
         bins=bins,
@@ -71,23 +66,25 @@ def plot_features_hist(feature_h, feature_d, bins, title):
 
 
 def CV_output(scores):
+    train_acc_std = round(scores["train_accuracy"].std(), 3)
+    test_acc_std = round(scores["test_accuracy"].std(), 3)
     return [
-        f"Mean Train Accuracy \t{round(scores['train_accuracy'].mean(), 3)}",
+        f"Mean Train Accuracy \t{round(scores['train_accuracy'].mean(), 3)} ({train_acc_std})",
+        f"Max Train Accuracy \t\t{round(scores['train_accuracy'].max(), 3)}",
         f"Mean Train Precision \t{round(scores['train_precision'].mean(), 3)}",
         f"Mean Train Recall \t\t{round(scores['train_recall'].mean(), 3)}",
         f"Mean Train F1 Score \t{round(scores['train_f1'].mean(), 3)}",
-        f"Mean Val Accuracy \t\t{round(scores['test_accuracy'].mean(), 3)}",
-        f"Mean Val Precision \t\t {round(scores['test_precision'].mean(), 3)}",
-        f"Mean Val Recall \t\t {round(scores['test_recall'].mean(), 3)}",
-        f"Mean Val F1 Score\t\t {round(scores['test_f1'].mean(), 3)}",
+        f"Mean Test Accuracy \t\t{round(scores['test_accuracy'].mean(), 3)} ({test_acc_std})",
+        f"Max Test Accuracy \t\t{round(scores['test_accuracy'].max(), 3)}",
+        f"Mean Test Precision \t {round(scores['test_precision'].mean(), 3)}",
+        f"Mean Test Recall \t\t {round(scores['test_recall'].mean(), 3)}",
+        f"Mean Test F1 Score\t\t {round(scores['test_f1'].mean(), 3)}",
     ]
 
 
 if __name__ == "__main__":
     # Get feature matrix and target vector
-    with open(
-        root + "Features_and_output/feature_df_21.06.22_15:22:03.pickle", "rb"
-    ) as f:
+    with open(root + "Features_and_output/feature_df.pickle", "rb") as f:
         feature_df = pickle.load(f)
 
     # Create feature matrix and target vector
@@ -136,6 +133,9 @@ if __name__ == "__main__":
     y = select_features_df["Depression"].to_numpy()
     groups = select_features_df["Subject_ID"].to_numpy()
 
+    # Normalize X again, since we removed many features
+    X = zscore(X, axis=None)
+
     # --------------------------------- CLASSIFYING ----------------------------------
 
     clf_names = [
@@ -145,6 +145,7 @@ if __name__ == "__main__":
         "K-nearest neighbors (KNN)",
         "Decision tree (DT)",
         "Random forest (RF)",
+        "Ensemble classifier",
     ]
 
     classifiers = [
@@ -156,23 +157,37 @@ if __name__ == "__main__":
         RandomForestClassifier(),
     ]
 
+    # Add ensemble classifier which combines all the other ones and uses majority voting
+    estimators = [
+        (clf_names[0], classifiers[0]),
+        (clf_names[1], classifiers[1]),
+        (clf_names[2], classifiers[2]),
+        (clf_names[3], classifiers[3]),
+        (clf_names[4], classifiers[4]),
+        (clf_names[5], classifiers[5]),
+    ]
+    eclf = VotingClassifier(estimators=estimators, n_jobs=-1, voting="hard")
+    classifiers.append(eclf)
+
     # For cross-validation, we use the GROUP functions which will ensure that the same subject
     # can not be present both in train and test sets
     # This matters when/if we will use epoched data
     logo = LeaveOneGroupOut()
-    gkf = GroupKFold(n_splits=10)  # StratifiedGroupKFold(n_splits=10)
+    gkf = GroupKFold(n_splits=5)
 
     # print("GKF SPLIT:")
-    for train_index, test_index in gkf.split(X, y, groups):
-        # print("TRAIN:", train_index, "TEST:", test_index)
-        X_train, X_test = X[train_index], X[test_index]
-        y_train, y_test = y[train_index], y[test_index]
-        # print(X_train, X_test, y_train, y_test)
+    # for train_index, test_index in gkf.split(X, y, groups):
+    #    print("TRAIN:", train_index, "TEST:", test_index)
+    #    X_train, X_test = X[train_index], X[test_index]
+    #    y_train, y_test = y[train_index], y[test_index]
+    #    print(X_train, X_test, y_train, y_test)
 
     # for train, test in gkf.split(X, y, groups=groups):
     #      print("%s %s" % (train, test))
     # Datetime object containing current date and time, for saving feature_df files
-    write_output = False
+
+    # Write time and selected features to classification_output.txt for saving results
+    write_output = True
     if write_output:
         now = datetime.now()
         dt_string = now.strftime("%d.%m.%y %H:%M:%S")
@@ -188,8 +203,9 @@ if __name__ == "__main__":
 
     # Iterate over classifiers
     for name, clf in zip(clf_names, classifiers):
-        # scores = cross_val_score(clf, X, y, groups=groups, scoring="accuracy", cv=gkf, n_jobs=-1)
+        # Set up the scoring metrics we want to save
         scoring = ["accuracy", "precision", "recall", "f1"]
+        # Perform cross-validation
         scores = cross_validate(
             clf,
             X,
@@ -201,26 +217,20 @@ if __name__ == "__main__":
             return_train_score=True,
         )
 
-        clf.fit(X_train, y_train)
-        y_pred = clf.predict(X_test)
-        pred_acc = clf.score(X_test, y_test)
-
+        # Print main results
+        train_acc_std = round(scores["train_accuracy"].std(), 3)
+        test_acc_std = round(scores["test_accuracy"].std(), 3)
         print(name)
-        print("--------------------------------------")
-        print(X_train.shape)
-        print(X_test.shape)
-        print(y_train.shape)
-        print(y_test.shape)
-        # print("Train accuracies:", scores["train_accuracy"])
-        # print("Test accuracies:", scores["test_accuracy"])
-        print("--- True:")
-        print(y_test)
-        print("--- Prediction:")
-        print(y_pred)
-        print("--- Accuracy:")
-        print(pred_acc)
+        print("----------------------------------------")
+        print(
+            f"Mean (std) train accuracy: {round(scores['train_accuracy'].mean(), 3)} ({train_acc_std})"
+        )
+        print(
+            f"Mean (std) test accuracies: {round(scores['test_accuracy'].mean(), 3)} ({test_acc_std})"
+        )
         print()
 
+        # Write all results to classification_output.txt
         if write_output:
             output = CV_output(scores)
             with open("classification_output.txt", "a") as o:
@@ -228,8 +238,6 @@ if __name__ == "__main__":
                 o.write("----------------------------------------" + "\n")
                 for i in output:
                     o.write(i + "\n")
-                p = str("Test prediction:\t\t" + str(y_pred))
-                o.write(p + "\n")
                 o.write("\n")
 
     """

@@ -1,6 +1,4 @@
-# import math as m
 import pickle
-import random
 import warnings
 from datetime import datetime
 from sys import platform
@@ -8,6 +6,7 @@ from sys import platform
 # import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import yasa
 from omegaconf import OmegaConf
 from scipy.stats import kurtosis, skew, zscore
 from vmdpy import VMD
@@ -40,7 +39,7 @@ def make_epochs(df, seconds, overlap):
     step = int(seconds * overlap)
     end = int(
         (116 // seconds) * seconds + step
-    )  # Fix/check if i make different epochs than 10s!!
+    )  # Fix/check if I make different epochs than 10s!!
     cuts = np.arange(0, end * samp_freq, step * samp_freq)
     all_pre_EC_10s_epochs = pd.DataFrame(columns=df.columns)
     all_pre_EC_10s_epochs["Epoch"] = None
@@ -83,6 +82,24 @@ if __name__ == "__main__":
     kurt_names = ["Kurt-" + chan for chan in channel_names]
     feature_names = mean_names + var_names + skew_names + kurt_names
 
+    # ---------------------------------------------------------------------------------------
+    # Band power trial!
+    # From:
+    # https://raphaelvallat.com/bandpower.html
+    # https://raphaelvallat.com/yasa/build/html/generated/yasa.bandpower.html#yasa.bandpower
+    # https://github.com/raphaelvallat/yasa/blob/master/notebooks/08_bandpower.ipynb
+
+    current_sub = all_pre_EC_116s[all_pre_EC_116s["Subject_ID"] == 12]
+    current_sub = current_sub.iloc[:, :-2]
+    current_sub = current_sub.to_numpy()
+
+    bp = yasa.bandpower(
+        current_sub.T, sf=samp_freq, ch_names=channel_names, relative=False
+    )
+    print(bp)
+
+    # ---------------------------------------------------------------------------------------
+
     # Create empty lists for feature matrix
     feature_mat = []
     targets = []
@@ -95,10 +112,10 @@ if __name__ == "__main__":
         # Get subtable for subject and depression value
         current_sub = all_pre_EC_116s[all_pre_EC_116s["Subject_ID"] == sub]
         is_depressed = current_sub["Depressed"].iloc[0]
+        current_sub = current_sub.iloc[:, :-2]
         current_sub = current_sub.to_numpy()
-        current_sub = np.delete(current_sub, [30, 31], axis=1)
 
-        # Calculate statistics per channel, these give (30,) arrays
+        # Calculate statistics per channel
         means = np.mean(current_sub, axis=0)
         vars = np.var(current_sub, axis=0)
         skews = skew(current_sub, axis=0)
@@ -126,9 +143,7 @@ if __name__ == "__main__":
         dt_string = now.strftime("%d.%m.%y_%H:%M:%S")
 
         # Save feature matrix as .pickle file
-        with open(
-            root + "Features_and_output" + f"/feature_df_{dt_string}.pickle", "wb"
-        ) as f:
+        with open(root + "Features_and_output" + "/feature_df.pickle", "wb") as f:
             pickle.dump(feature_df, f)
 
         print("Feature matrix saved.")
@@ -136,21 +151,21 @@ if __name__ == "__main__":
     # ------------------------------------------------ VMD STUFF ------------------------------------------------
 
     """
-    PAPER: Epilepsy seizure detection using kurtosis based VMD’s parameters selection and bandwidth features
+    PAPER: Epilepsy seizure detection using kurtosis based VMD's parameters selection and bandwidth features
     AUTHORS: Sukriti, Monisha Chakraborty, Debjani Mitra
 
     The proposed methodology is described as follows:
 
-    Step 1: A range of K and α is set such that K = 1–15 with an interval of 1 and α = 100–15000 with an interval
-            of 100.
+    Step 1: A range of K and alpha is set such that K = 1-15 with an interval of 1 and
+            alpha = 100-15000 with an interval of 100.
     Step 2: A new signal is formulated such that it consists of 10 s of EEG segments from each of the datasets
             Z, F and S.
-    Step 3: The new signal is decomposed by VMD for all possible combinations of K and α to obtain K BIMFs.
+    Step 3: The new signal is decomposed by VMD for all possible combinations of K and alpha to obtain K BIMFs.
     Step 4: The BIMFs are then summed up to obtain the reconstruction signal for each decomposition.
     Step 5: Kurtosis of each reconstructed signal is determined.
-    Step 6: The value of K and α for which kurtosis is maximum is recorded.
+    Step 6: The value of K and alpha for which kurtosis is maximum is recorded.
     Step 7: Lastly, the five sets of EEG data (Z, O, N, F and S) are decomposed into BIMFs by VMD under the
-            recorded value of K and α.
+            recorded value of K and alpha.
     """
 
     # Step 1: Parameters for VMD proposed in the paper
@@ -162,9 +177,9 @@ if __name__ == "__main__":
     tol = 1e-6  # Tolerance value for convergence criteria
 
     # Step 2: Split data into 10-second epochs
-    # make_epochs(all_pre_EC_116s, 10, 0.5) --> Already done, comment out
+    # make_epochs(all_pre_EC_116s, 10, 0.5)  # --> Already done, comment out
     with open(root + "Epochs/10_seconds" + "/all_pre_EC_10s_epochs.pickle", "rb") as f:
-        all_pre_EC_10s_epochs = pickle.load(f)
+        df10 = pickle.load(f)
 
     # Step 3: Run VMD
     # Outputs:
@@ -172,17 +187,70 @@ if __name__ == "__main__":
     # u_hat   - spectra of the modes
     # omega   - estimated mode center-frequencies
 
-    epochs = all_pre_EC_10s_epochs["Epoch"].unique()
+    subjects = df10["Subject_ID"].unique()
+    epochs = df10["Epoch"].unique()
+    channels = df10.columns[:-3]
+
+    """ sub_df10 = df10[(df10["Subject_ID"] == 12) & (df10["Epoch"] == 0)]
+    f = sub_df10["Fp1-A1"]
+
+    K = 3
+    alpha = 2000
+
+    u, _, _ = VMD(f, alpha, tau, K, DC, init, tol)
+    u_sum = u.sum(axis=0)
+
+    #. Visualize decomposed modes
+    plt.figure(figsize=(14,14))
+    plt.subplot(5,1,1)
+    plt.plot(f)
+    plt.title('Original signal')
+    plt.subplot(5,1,2)
+    plt.plot(u[0].T)
+    plt.title('Decomposed mode 1')
+    plt.subplot(5,1,3)
+    plt.plot(u[1].T)
+    plt.title('Decomposed mode 2')
+    plt.subplot(5,1,4)
+    plt.plot(u[2].T)
+    plt.title('Decomposed mode 3')
+    plt.subplot(5,1,5)
+    plt.plot(u_sum.T)
+    plt.title('Reconstructed signal')
+    plt.xlabel('Datapoints')
+    #plt.legend(['Mode %d'%m_i for m_i in range(u.shape[0])])
+    #plt.tight_layout()
+    plt.show() """
+
     max_kurt = 0
+    best_K = 0
+    best_alpha = 0
+    i = 1
 
-    for k in K:
-        for a in alpha:
-            kurt = random.randint(0, 25)
-            if kurt > max_kurt:
-                max_kurt = kurt
-            print(f"{k} \t {a} \t {max_kurt}")
+    for s in subjects:
+        print(f"Subject {i}/{subjects.shape[0]}")
+        for e in epochs:
+            print("  Epoch ", e)
+            sub_df = df10[(df10["Subject_ID"] == s) & (df10["Epoch"] == e)]
+            f = sub_df["Fp1-A1"]
+            # for c in channels:
+            #     sub_df = df10[(df10["Subject_ID"] == s) & (df10["Epoch"] == e)]
+            #     f = sub_df[c]
+            #     print("    Channel ", c)
+            for k in K:
+                for a in alpha:
+                    u, _, _ = VMD(f, a, tau, k, DC, init, tol)
+                    u_sum = u.sum(axis=0)
+                    kurt = kurtosis(u_sum)
+                    if kurt > max_kurt:
+                        max_kurt = kurt
+                        best_K = k
+                        best_alpha = a
+        i += 1
 
-    u, u_hat, omega = VMD(f, alpha, tau, K, DC, init, tol)
+    print("Maximum kurtosis obtained:", max_kurt)
+    print("Best K:", best_K)
+    print("Best alpha:", best_alpha)
 
     """
     # ------------------------------------------------ PLOTTING ------------------------------------------------
