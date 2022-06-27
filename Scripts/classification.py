@@ -1,24 +1,24 @@
 import pickle
-import sys
 import warnings
 from datetime import datetime
 from sys import platform
 
 import matplotlib.pyplot as plt
 import numpy as np
+
+# import seaborn as sns
 from mrmr import mrmr_classif
 from omegaconf import OmegaConf
 from scipy.stats import zscore
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.ensemble import RandomForestClassifier, VotingClassifier
-from sklearn.model_selection import (GroupKFold, LeaveOneGroupOut,
-                                     cross_validate)
+from sklearn.model_selection import GroupKFold, LeaveOneGroupOut, cross_validate
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
 warnings.filterwarnings("ignore")
-sys.setrecursionlimit(3 * sys.getrecursionlimit())
+# sys.setrecursionlimit(3 * sys.getrecursionlimit())
 
 
 # Get global variables and lists from the configuration file
@@ -84,7 +84,11 @@ def CV_output(scores):
 
 if __name__ == "__main__":
     # Get feature matrix and target vector
-    with open(root + "Features_and_output/feature_df.pickle", "rb") as f:
+    current_feature_file = "all_pre_EC_116s"
+    with open(
+        root + "Features_and_output/feature_df_" + current_feature_file + ".pickle",
+        "rb",
+    ) as f:
         feature_df = pickle.load(f)
 
     # Create feature matrix and target vector
@@ -120,9 +124,24 @@ if __name__ == "__main__":
 
     # ---------------------------- FEATURE SELECTION ---------------------------------
 
+    # Choose subset of features for the feature selector to choose from
+    # region_names = ["frontal", "temporal", "parietal", "occipital", "central"]
+    # X = X.filter(regex='|'.join(region_names))
+    # sub_cols = [col for col in X.columns if "pow" in col]
+    # X = X[X.columns.intersection(sub_cols)]
+
     # K is how many features we want to be chosen
+    # According to "Statistical challenges of high-dimensional data"
+    # BY IAN M. JOHNSTONE AND D. MICHAEL TITTERINGTON a good rule of thumb for how many features
+    # to choose is n/p>=5 where n is datapoints and p parameters (features)
+    # However, paper also says that a larger number have shown notable success
+
     # Using MRMR (Minimum Redundancy - Maximum Relevance)
-    selected_features = mrmr_classif(X=X, y=y, K=15)
+    selected_features = mrmr_classif(X=X, y=y, K=8)
+
+    print("SELECTED FEATURES (", len(selected_features), "):")
+    print(selected_features)
+    print()
 
     # Make feature matrix which has only top K features
     chosen_columns = selected_features + ["Subject_ID", "Depression"]
@@ -132,6 +151,10 @@ if __name__ == "__main__":
     X = select_features_df.iloc[:, :-2].to_numpy()
     y = select_features_df["Depression"].to_numpy()
     groups = select_features_df["Subject_ID"].to_numpy()
+
+    # Correlation between selected features
+    # plt.figure()
+    # sns.heatmap(select_features_df.iloc[:, :-2].corr())
 
     # Normalize X again, since we removed many features
     X = zscore(X, axis=None)
@@ -173,18 +196,7 @@ if __name__ == "__main__":
     # can not be present both in train and test sets
     # This matters when/if we will use epoched data
     logo = LeaveOneGroupOut()
-    gkf = GroupKFold(n_splits=5)
-
-    # print("GKF SPLIT:")
-    # for train_index, test_index in gkf.split(X, y, groups):
-    #    print("TRAIN:", train_index, "TEST:", test_index)
-    #    X_train, X_test = X[train_index], X[test_index]
-    #    y_train, y_test = y[train_index], y[test_index]
-    #    print(X_train, X_test, y_train, y_test)
-
-    # for train, test in gkf.split(X, y, groups=groups):
-    #      print("%s %s" % (train, test))
-    # Datetime object containing current date and time, for saving feature_df files
+    gkf = GroupKFold(n_splits=10)
 
     # Write time and selected features to classification_output.txt for saving results
     write_output = True
@@ -221,7 +233,7 @@ if __name__ == "__main__":
         train_acc_std = round(scores["train_accuracy"].std(), 3)
         test_acc_std = round(scores["test_accuracy"].std(), 3)
         print(name)
-        print("----------------------------------------")
+        print("-----------------------------------------")
         print(
             f"Mean (std) train accuracy: {round(scores['train_accuracy'].mean(), 3)} ({train_acc_std})"
         )
@@ -235,7 +247,7 @@ if __name__ == "__main__":
             output = CV_output(scores)
             with open("classification_output.txt", "a") as o:
                 o.write(name + "\n")
-                o.write("----------------------------------------" + "\n")
+                o.write("-----------------------------------------" + "\n")
                 for i in output:
                     o.write(i + "\n")
                 o.write("\n")

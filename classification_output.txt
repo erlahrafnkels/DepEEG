@@ -568,3 +568,1048 @@ Mean Test Precision 	 0.42
 Mean Test Recall 		 0.317
 Mean Test F1 Score		 0.347
 
+------ NEW RUN: 24.06.22 12:02:20 ------------------------------------------
+Selected features (15):
+['Skew-T6-A2', 'Skew-F8-A2', 'Kurt-F3-A1', 'Var-Fp2-A2', 'Skew-FT7-A1', 'Kurt-F7-A1', 'Kurt-FC3-A1', 'Var-FT8-A2', 'Skew-CP4-A2', 'Var-F8-A2', 'Skew-Pz-A2', 'Skew-FCz-A1', 'Kurt-FC4-A2', 'Var-T4-A2', 'Skew-O1-A1']
+
+Linear discriminant analysis (LDA)
+----------------------------------------
+Mean Train Accuracy 	0.884 (0.053)
+Max Train Accuracy 		0.97
+Mean Train Precision 	0.911
+Mean Train Recall 		0.829
+Mean Train F1 Score 	0.868
+Mean Test Accuracy 		0.781 (0.093)
+Max Test Accuracy 		0.875
+Mean Test Precision 	 0.767
+Mean Test Recall 		 0.81
+Mean Test F1 Score		 0.761
+
+RBF support vector machine (RBFSVM)
+----------------------------------------
+Mean Train Accuracy 	0.665 (0.049)
+Max Train Accuracy 		0.727
+Mean Train Precision 	0.875
+Mean Train Recall 		0.327
+Mean Train F1 Score 	0.471
+Mean Test Accuracy 		0.558 (0.221)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.12
+Mean Test Recall 		 0.15
+Mean Test F1 Score		 0.133
+
+Linear support vector machine RBF (LSVM)
+----------------------------------------
+Mean Train Accuracy 	0.701 (0.052)
+Max Train Accuracy 		0.788
+Mean Train Precision 	0.849
+Mean Train Recall 		0.438
+Mean Train F1 Score 	0.573
+Mean Test Accuracy 		0.558 (0.221)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.22
+Mean Test Recall 		 0.217
+Mean Test F1 Score		 0.213
+
+K-nearest neighbors (KNN)
+----------------------------------------
+Mean Train Accuracy 	0.805 (0.044)
+Max Train Accuracy 		0.875
+Mean Train Precision 	0.847
+Mean Train Recall 		0.71
+Mean Train F1 Score 	0.768
+Mean Test Accuracy 		0.656 (0.218)
+Max Test Accuracy 		0.875
+Mean Test Precision 	 0.767
+Mean Test Recall 		 0.529
+Mean Test F1 Score		 0.557
+
+Decision tree (DT)
+----------------------------------------
+Mean Train Accuracy 	1.0 (0.0)
+Max Train Accuracy 		1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Test Accuracy 		0.464 (0.166)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.53
+Mean Test Recall 		 0.529
+Mean Test F1 Score		 0.429
+
+Random forest (RF)
+----------------------------------------
+Mean Train Accuracy 	1.0 (0.0)
+Max Train Accuracy 		1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Test Accuracy 		0.611 (0.161)
+Max Test Accuracy 		0.875
+Mean Test Precision 	 0.68
+Mean Test Recall 		 0.607
+Mean Test F1 Score		 0.563
+
+Ensemble classifier
+----------------------------------------
+Mean Train Accuracy 	0.835 (0.031)
+Max Train Accuracy 		0.879
+Mean Train Precision 	1.0
+Mean Train Recall 		0.647
+Mean Train F1 Score 	0.785
+Mean Test Accuracy 		0.608 (0.28)
+Max Test Accuracy 		0.875
+Mean Test Precision 	 0.52
+Mean Test Recall 		 0.383
+Mean Test F1 Score		 0.427
+
+------ NEW RUN: 24.06.22 13:10:55 ------------------------------------------
+Selected features (5):
+['Skew-T6-A2', 'Delta-pow-P4-A2', 'Gamma-pow-CP4-A2', 'Total-pow-F8-A2', 'Skew-FT7-A1']
+
+Linear discriminant analysis (LDA)
+----------------------------------------
+Mean Train Accuracy 	0.701 (0.038)
+Max Train Accuracy 		0.758
+Mean Train Precision 	0.673
+Mean Train Recall 		0.665
+Mean Train F1 Score 	0.668
+Mean Test Accuracy 		0.706 (0.103)
+Max Test Accuracy 		0.875
+Mean Test Precision 	 0.73
+Mean Test Recall 		 0.664
+Mean Test F1 Score		 0.65
+
+RBF support vector machine (RBFSVM)
+----------------------------------------
+Mean Train Accuracy 	0.726 (0.033)
+Max Train Accuracy 		0.758
+Mean Train Precision 	0.726
+Mean Train Recall 		0.64
+Mean Train F1 Score 	0.679
+Mean Test Accuracy 		0.633 (0.159)
+Max Test Accuracy 		0.875
+Mean Test Precision 	 0.713
+Mean Test Recall 		 0.557
+Mean Test F1 Score		 0.557
+
+Linear support vector machine RBF (LSVM)
+----------------------------------------
+Mean Train Accuracy 	0.707 (0.042)
+Max Train Accuracy 		0.758
+Mean Train Precision 	0.681
+Mean Train Recall 		0.682
+Mean Train F1 Score 	0.68
+Mean Test Accuracy 		0.686 (0.159)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.68
+Mean Test Recall 		 0.631
+Mean Test F1 Score		 0.606
+
+K-nearest neighbors (KNN)
+----------------------------------------
+Mean Train Accuracy 	0.757 (0.071)
+Max Train Accuracy 		0.844
+Mean Train Precision 	0.754
+Mean Train Recall 		0.671
+Mean Train F1 Score 	0.698
+Mean Test Accuracy 		0.589 (0.107)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.58
+Mean Test Recall 		 0.536
+Mean Test F1 Score		 0.505
+
+Decision tree (DT)
+----------------------------------------
+Mean Train Accuracy 	1.0 (0.0)
+Max Train Accuracy 		1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Test Accuracy 		0.464 (0.093)
+Max Test Accuracy 		0.625
+Mean Test Precision 	 0.424
+Mean Test Recall 		 0.374
+Mean Test F1 Score		 0.315
+
+Random forest (RF)
+----------------------------------------
+Mean Train Accuracy 	1.0 (0.0)
+Max Train Accuracy 		1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Test Accuracy 		0.517 (0.107)
+Max Test Accuracy 		0.625
+Mean Test Precision 	 0.267
+Mean Test Recall 		 0.286
+Mean Test F1 Score		 0.22
+
+Ensemble classifier
+----------------------------------------
+Mean Train Accuracy 	0.792 (0.032)
+Max Train Accuracy 		0.818
+Mean Train Precision 	0.826
+Mean Train Recall 		0.694
+Mean Train F1 Score 	0.752
+Mean Test Accuracy 		0.661 (0.11)
+Max Test Accuracy 		0.875
+Mean Test Precision 	 0.68
+Mean Test Recall 		 0.564
+Mean Test F1 Score		 0.566
+
+------ NEW RUN: 24.06.22 13:11:48 ------------------------------------------
+Selected features (5):
+['Skew-T6-A2', 'Delta-pow-P4-A2', 'Gamma-pow-CP4-A2', 'Total-pow-F8-A2', 'Skew-FT7-A1']
+
+Linear discriminant analysis (LDA)
+----------------------------------------
+Mean Train Accuracy 	0.701 (0.038)
+Max Train Accuracy 		0.758
+Mean Train Precision 	0.673
+Mean Train Recall 		0.665
+Mean Train F1 Score 	0.668
+Mean Test Accuracy 		0.706 (0.103)
+Max Test Accuracy 		0.875
+Mean Test Precision 	 0.73
+Mean Test Recall 		 0.664
+Mean Test F1 Score		 0.65
+
+RBF support vector machine (RBFSVM)
+----------------------------------------
+Mean Train Accuracy 	0.726 (0.033)
+Max Train Accuracy 		0.758
+Mean Train Precision 	0.726
+Mean Train Recall 		0.64
+Mean Train F1 Score 	0.679
+Mean Test Accuracy 		0.633 (0.159)
+Max Test Accuracy 		0.875
+Mean Test Precision 	 0.713
+Mean Test Recall 		 0.557
+Mean Test F1 Score		 0.557
+
+Linear support vector machine RBF (LSVM)
+----------------------------------------
+Mean Train Accuracy 	0.707 (0.042)
+Max Train Accuracy 		0.758
+Mean Train Precision 	0.681
+Mean Train Recall 		0.682
+Mean Train F1 Score 	0.68
+Mean Test Accuracy 		0.686 (0.159)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.68
+Mean Test Recall 		 0.631
+Mean Test F1 Score		 0.606
+
+K-nearest neighbors (KNN)
+----------------------------------------
+Mean Train Accuracy 	0.757 (0.071)
+Max Train Accuracy 		0.844
+Mean Train Precision 	0.754
+Mean Train Recall 		0.671
+Mean Train F1 Score 	0.698
+Mean Test Accuracy 		0.589 (0.107)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.58
+Mean Test Recall 		 0.536
+Mean Test F1 Score		 0.505
+
+Decision tree (DT)
+----------------------------------------
+Mean Train Accuracy 	1.0 (0.0)
+Max Train Accuracy 		1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Test Accuracy 		0.489 (0.114)
+Max Test Accuracy 		0.625
+Mean Test Precision 	 0.424
+Mean Test Recall 		 0.374
+Mean Test F1 Score		 0.315
+
+Random forest (RF)
+----------------------------------------
+Mean Train Accuracy 	1.0 (0.0)
+Max Train Accuracy 		1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Test Accuracy 		0.489 (0.082)
+Max Test Accuracy 		0.625
+Mean Test Precision 	 0.297
+Mean Test Recall 		 0.336
+Mean Test F1 Score		 0.281
+
+Ensemble classifier
+----------------------------------------
+Mean Train Accuracy 	0.792 (0.032)
+Max Train Accuracy 		0.818
+Mean Train Precision 	0.826
+Mean Train Recall 		0.694
+Mean Train F1 Score 	0.752
+Mean Test Accuracy 		0.636 (0.128)
+Max Test Accuracy 		0.875
+Mean Test Precision 	 0.68
+Mean Test Recall 		 0.536
+Mean Test F1 Score		 0.541
+
+------ NEW RUN: 24.06.22 19:48:25 ------------------------------------------
+Selected features (5):
+['Skew-T6-A2', 'Delta-pow-P4-A2', 'Gamma-pow-CP4-A2', 'Total-pow-F8-A2', 'Skew-FT7-A1']
+
+Linear discriminant analysis (LDA)
+----------------------------------------
+Mean Train Accuracy 	0.701 (0.038)
+Max Train Accuracy 		0.758
+Mean Train Precision 	0.673
+Mean Train Recall 		0.665
+Mean Train F1 Score 	0.668
+Mean Test Accuracy 		0.706 (0.103)
+Max Test Accuracy 		0.875
+Mean Test Precision 	 0.73
+Mean Test Recall 		 0.664
+Mean Test F1 Score		 0.65
+
+RBF support vector machine (RBFSVM)
+----------------------------------------
+Mean Train Accuracy 	0.726 (0.033)
+Max Train Accuracy 		0.758
+Mean Train Precision 	0.726
+Mean Train Recall 		0.64
+Mean Train F1 Score 	0.679
+Mean Test Accuracy 		0.633 (0.159)
+Max Test Accuracy 		0.875
+Mean Test Precision 	 0.713
+Mean Test Recall 		 0.557
+Mean Test F1 Score		 0.557
+
+Linear support vector machine RBF (LSVM)
+----------------------------------------
+Mean Train Accuracy 	0.707 (0.042)
+Max Train Accuracy 		0.758
+Mean Train Precision 	0.681
+Mean Train Recall 		0.682
+Mean Train F1 Score 	0.68
+Mean Test Accuracy 		0.686 (0.159)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.68
+Mean Test Recall 		 0.631
+Mean Test F1 Score		 0.606
+
+K-nearest neighbors (KNN)
+----------------------------------------
+Mean Train Accuracy 	0.757 (0.071)
+Max Train Accuracy 		0.844
+Mean Train Precision 	0.754
+Mean Train Recall 		0.671
+Mean Train F1 Score 	0.698
+Mean Test Accuracy 		0.589 (0.107)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.58
+Mean Test Recall 		 0.536
+Mean Test F1 Score		 0.505
+
+Decision tree (DT)
+----------------------------------------
+Mean Train Accuracy 	1.0 (0.0)
+Max Train Accuracy 		1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Test Accuracy 		0.514 (0.099)
+Max Test Accuracy 		0.625
+Mean Test Precision 	 0.424
+Mean Test Recall 		 0.402
+Mean Test F1 Score		 0.346
+
+Random forest (RF)
+----------------------------------------
+Mean Train Accuracy 	1.0 (0.0)
+Max Train Accuracy 		1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Test Accuracy 		0.514 (0.06)
+Max Test Accuracy 		0.625
+Mean Test Precision 	 0.433
+Mean Test Recall 		 0.402
+Mean Test F1 Score		 0.357
+
+Ensemble classifier
+----------------------------------------
+Mean Train Accuracy 	0.792 (0.032)
+Max Train Accuracy 		0.818
+Mean Train Precision 	0.826
+Mean Train Recall 		0.694
+Mean Train F1 Score 	0.752
+Mean Test Accuracy 		0.661 (0.11)
+Max Test Accuracy 		0.875
+Mean Test Precision 	 0.68
+Mean Test Recall 		 0.564
+Mean Test F1 Score		 0.566
+
+------ NEW RUN: 25.06.22 11:14:27 ------------------------------------------
+Selected features (5):
+['Skew-T6-A2', 'Delta-pow-P4-A2', 'Gamma-pow-CP4-A2', 'Total-pow-F8-A2', 'Skew-FT7-A1']
+
+Linear discriminant analysis (LDA)
+----------------------------------------
+Mean Train Accuracy 	0.702 (0.032)
+Max Train Accuracy 		0.784
+Mean Train Precision 	0.679
+Mean Train Recall 		0.671
+Mean Train F1 Score 	0.674
+Mean Test Accuracy 		0.68 (0.163)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.667
+Mean Test Recall 		 0.667
+Mean Test F1 Score		 0.613
+
+RBF support vector machine (RBFSVM)
+----------------------------------------
+Mean Train Accuracy 	0.724 (0.02)
+Max Train Accuracy 		0.757
+Mean Train Precision 	0.724
+Mean Train Recall 		0.647
+Mean Train F1 Score 	0.683
+Mean Test Accuracy 		0.685 (0.152)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.6
+Mean Test Recall 		 0.617
+Mean Test F1 Score		 0.56
+
+Linear support vector machine RBF (LSVM)
+----------------------------------------
+Mean Train Accuracy 	0.718 (0.028)
+Max Train Accuracy 		0.757
+Mean Train Precision 	0.69
+Mean Train Recall 		0.707
+Mean Train F1 Score 	0.698
+Mean Test Accuracy 		0.705 (0.189)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.667
+Mean Test Recall 		 0.717
+Mean Test F1 Score		 0.647
+
+K-nearest neighbors (KNN)
+----------------------------------------
+Mean Train Accuracy 	0.789 (0.047)
+Max Train Accuracy 		0.861
+Mean Train Precision 	0.798
+Mean Train Recall 		0.721
+Mean Train F1 Score 	0.753
+Mean Test Accuracy 		0.665 (0.173)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.6
+Mean Test Recall 		 0.567
+Mean Test F1 Score		 0.547
+
+Decision tree (DT)
+----------------------------------------
+Mean Train Accuracy 	1.0 (0.0)
+Max Train Accuracy 		1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Test Accuracy 		0.66 (0.159)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.525
+Mean Test Recall 		 0.675
+Mean Test F1 Score		 0.551
+
+Random forest (RF)
+----------------------------------------
+Mean Train Accuracy 	1.0 (0.0)
+Max Train Accuracy 		1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Test Accuracy 		0.59 (0.174)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.458
+Mean Test Recall 		 0.525
+Mean Test F1 Score		 0.426
+
+Ensemble classifier
+----------------------------------------
+Mean Train Accuracy 	0.805 (0.016)
+Max Train Accuracy 		0.838
+Mean Train Precision 	0.846
+Mean Train Recall 		0.706
+Mean Train F1 Score 	0.768
+Mean Test Accuracy 		0.66 (0.159)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.567
+Mean Test Recall 		 0.617
+Mean Test F1 Score		 0.547
+
+------ NEW RUN: 25.06.22 12:38:27 ------------------------------------------
+Selected features (10):
+['Skew-T6-A2', 'Delta-pow-P4-A2', 'Gamma-pow-CP4-A2', 'Total-pow-F8-A2', 'Skew-FT7-A1', 'Kurt-F7-A1', 'Kurt-FC3-A1', 'Var-Fp2-A2', 'Theta-pow-F8-A2', 'Skew-CP4-A2']
+
+Linear discriminant analysis (LDA)
+----------------------------------------
+Mean Train Accuracy 	0.843 (0.038)
+Max Train Accuracy 		0.919
+Mean Train Precision 	0.872
+Mean Train Recall 		0.778
+Mean Train F1 Score 	0.821
+Mean Test Accuracy 		0.735 (0.164)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.667
+Mean Test Recall 		 0.75
+Mean Test F1 Score		 0.663
+
+RBF support vector machine (RBFSVM)
+----------------------------------------
+Mean Train Accuracy 	0.637 (0.044)
+Max Train Accuracy 		0.722
+Mean Train Precision 	0.889
+Mean Train Recall 		0.252
+Mean Train F1 Score 	0.387
+Mean Test Accuracy 		0.61 (0.253)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.25
+Mean Test Recall 		 0.183
+Mean Test F1 Score		 0.2
+
+Linear support vector machine RBF (LSVM)
+----------------------------------------
+Mean Train Accuracy 	0.664 (0.041)
+Max Train Accuracy 		0.75
+Mean Train Precision 	0.837
+Mean Train Recall 		0.338
+Mean Train F1 Score 	0.476
+Mean Test Accuracy 		0.535 (0.237)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.117
+Mean Test Recall 		 0.15
+Mean Test F1 Score		 0.13
+
+K-nearest neighbors (KNN)
+----------------------------------------
+Mean Train Accuracy 	0.77 (0.025)
+Max Train Accuracy 		0.811
+Mean Train Precision 	0.822
+Mean Train Recall 		0.643
+Mean Train F1 Score 	0.721
+Mean Test Accuracy 		0.71 (0.239)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.767
+Mean Test Recall 		 0.608
+Mean Test F1 Score		 0.637
+
+Decision tree (DT)
+----------------------------------------
+Mean Train Accuracy 	1.0 (0.0)
+Max Train Accuracy 		1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Test Accuracy 		0.495 (0.23)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.483
+Mean Test Recall 		 0.558
+Mean Test F1 Score		 0.463
+
+Random forest (RF)
+----------------------------------------
+Mean Train Accuracy 	1.0 (0.0)
+Max Train Accuracy 		1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Test Accuracy 		0.61 (0.118)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.533
+Mean Test Recall 		 0.533
+Mean Test F1 Score		 0.467
+
+Ensemble classifier
+----------------------------------------
+Mean Train Accuracy 	0.819 (0.024)
+Max Train Accuracy 		0.865
+Mean Train Precision 	1.0
+Mean Train Recall 		0.609
+Mean Train F1 Score 	0.756
+Mean Test Accuracy 		0.635 (0.253)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.517
+Mean Test Recall 		 0.408
+Mean Test F1 Score		 0.42
+
+------ NEW RUN: 25.06.22 12:45:40 ------------------------------------------
+Selected features (10):
+['Gamma-pow-frontal', 'Delta-pow-temporal', 'Theta-pow-frontal', 'Gamma-pow-central', 'Theta-pow-central', 'Alpha-pow-frontal', 'Delta-pow-central', 'Delta-pow-frontal', 'Theta-pow-temporal', 'Gamma-pow-parietal']
+
+Linear discriminant analysis (LDA)
+-----------------------------------------
+Mean Train Accuracy 	0.721 (0.046)
+Max Train Accuracy 		0.811
+Mean Train Precision 	0.731
+Mean Train Recall 		0.631
+Mean Train F1 Score 	0.674
+Mean Test Accuracy 		0.66 (0.224)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.7
+Mean Test Recall 		 0.633
+Mean Test F1 Score		 0.617
+
+RBF support vector machine (RBFSVM)
+-----------------------------------------
+Mean Train Accuracy 	0.71 (0.032)
+Max Train Accuracy 		0.757
+Mean Train Precision 	0.78
+Mean Train Recall 		0.521
+Mean Train F1 Score 	0.618
+Mean Test Accuracy 		0.56 (0.15)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.4
+Mean Test Recall 		 0.333
+Mean Test F1 Score		 0.34
+
+Linear support vector machine RBF (LSVM)
+-----------------------------------------
+Mean Train Accuracy 	0.648 (0.039)
+Max Train Accuracy 		0.694
+Mean Train Precision 	0.651
+Mean Train Recall 		0.528
+Mean Train F1 Score 	0.57
+Mean Test Accuracy 		0.56 (0.15)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.567
+Mean Test Recall 		 0.608
+Mean Test F1 Score		 0.49
+
+K-nearest neighbors (KNN)
+-----------------------------------------
+Mean Train Accuracy 	0.769 (0.06)
+Max Train Accuracy 		0.838
+Mean Train Precision 	0.727
+Mean Train Recall 		0.797
+Mean Train F1 Score 	0.759
+Mean Test Accuracy 		0.54 (0.192)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.5
+Mean Test Recall 		 0.533
+Mean Test F1 Score		 0.473
+
+Decision tree (DT)
+-----------------------------------------
+Mean Train Accuracy 	1.0 (0.0)
+Max Train Accuracy 		1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Test Accuracy 		0.475 (0.284)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.425
+Mean Test Recall 		 0.45
+Mean Test F1 Score		 0.39
+
+Random forest (RF)
+-----------------------------------------
+Mean Train Accuracy 	1.0 (0.0)
+Max Train Accuracy 		1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Test Accuracy 		0.505 (0.201)
+Max Test Accuracy 		0.8
+Mean Test Precision 	 0.533
+Mean Test Recall 		 0.408
+Mean Test F1 Score		 0.419
+
+Ensemble classifier
+-----------------------------------------
+Mean Train Accuracy 	0.84 (0.059)
+Max Train Accuracy 		0.919
+Mean Train Precision 	0.897
+Mean Train Recall 		0.732
+Mean Train F1 Score 	0.801
+Mean Test Accuracy 		0.56 (0.099)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.45
+Mean Test Recall 		 0.333
+Mean Test F1 Score		 0.35
+
+------ NEW RUN: 25.06.22 12:53:16 ------------------------------------------
+Selected features (10):
+['Var-FT8-A2', 'Alpha-pow-T5-A1', 'Kurt-FC3-A1', 'Delta-pow-FT8-A2', 'Skew-FT7-A1', 'Var-T4-A2', 'Kurt-O1-A1', 'Delta-pow-CP4-A2', 'Var-F8-A2', 'Delta-pow-F8-A2']
+
+Linear discriminant analysis (LDA)
+-----------------------------------------
+Mean Train Accuracy 	0.794 (0.047)
+Max Train Accuracy 		0.892
+Mean Train Precision 	0.769
+Mean Train Recall 		0.8
+Mean Train F1 Score 	0.782
+Mean Test Accuracy 		0.615 (0.178)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.525
+Mean Test Recall 		 0.575
+Mean Test F1 Score		 0.501
+
+RBF support vector machine (RBFSVM)
+-----------------------------------------
+Mean Train Accuracy 	0.715 (0.031)
+Max Train Accuracy 		0.757
+Mean Train Precision 	0.804
+Mean Train Recall 		0.551
+Mean Train F1 Score 	0.623
+Mean Test Accuracy 		0.59 (0.207)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.383
+Mean Test Recall 		 0.392
+Mean Test F1 Score		 0.353
+
+Linear support vector machine RBF (LSVM)
+-----------------------------------------
+Mean Train Accuracy 	0.767 (0.032)
+Max Train Accuracy 		0.811
+Mean Train Precision 	0.808
+Mean Train Recall 		0.726
+Mean Train F1 Score 	0.735
+Mean Test Accuracy 		0.54 (0.156)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.308
+Mean Test Recall 		 0.45
+Mean Test F1 Score		 0.336
+
+K-nearest neighbors (KNN)
+-----------------------------------------
+Mean Train Accuracy 	0.756 (0.051)
+Max Train Accuracy 		0.838
+Mean Train Precision 	0.873
+Mean Train Recall 		0.56
+Mean Train F1 Score 	0.677
+Mean Test Accuracy 		0.665 (0.206)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.467
+Mean Test Recall 		 0.417
+Mean Test F1 Score		 0.427
+
+Decision tree (DT)
+-----------------------------------------
+Mean Train Accuracy 	1.0 (0.0)
+Max Train Accuracy 		1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Test Accuracy 		0.59 (0.174)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.483
+Mean Test Recall 		 0.442
+Mean Test F1 Score		 0.416
+
+Random forest (RF)
+-----------------------------------------
+Mean Train Accuracy 	1.0 (0.0)
+Max Train Accuracy 		1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Test Accuracy 		0.64 (0.177)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.533
+Mean Test Recall 		 0.517
+Mean Test F1 Score		 0.497
+
+Ensemble classifier
+-----------------------------------------
+Mean Train Accuracy 	0.878 (0.054)
+Max Train Accuracy 		0.973
+Mean Train Precision 	0.98
+Mean Train Recall 		0.75
+Mean Train F1 Score 	0.842
+Mean Test Accuracy 		0.615 (0.178)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.367
+Mean Test Recall 		 0.417
+Mean Test F1 Score		 0.367
+
+------ NEW RUN: 25.06.22 12:54:53 ------------------------------------------
+Selected features (10):
+['Skew-T6-A2', 'Delta-pow-P4-A2', 'Gamma-pow-CP4-A2', 'Total-pow-F8-A2', 'Skew-FT7-A1', 'Kurt-F7-A1', 'Kurt-FC3-A1', 'Var-Fp2-A2', 'Theta-pow-F8-A2', 'Skew-CP4-A2']
+
+Linear discriminant analysis (LDA)
+-----------------------------------------
+Mean Train Accuracy 	0.843 (0.038)
+Max Train Accuracy 		0.919
+Mean Train Precision 	0.872
+Mean Train Recall 		0.778
+Mean Train F1 Score 	0.821
+Mean Test Accuracy 		0.735 (0.164)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.667
+Mean Test Recall 		 0.75
+Mean Test F1 Score		 0.663
+
+RBF support vector machine (RBFSVM)
+-----------------------------------------
+Mean Train Accuracy 	0.637 (0.044)
+Max Train Accuracy 		0.722
+Mean Train Precision 	0.889
+Mean Train Recall 		0.252
+Mean Train F1 Score 	0.387
+Mean Test Accuracy 		0.61 (0.253)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.25
+Mean Test Recall 		 0.183
+Mean Test F1 Score		 0.2
+
+Linear support vector machine RBF (LSVM)
+-----------------------------------------
+Mean Train Accuracy 	0.732 (0.022)
+Max Train Accuracy 		0.784
+Mean Train Precision 	0.87
+Mean Train Recall 		0.498
+Mean Train F1 Score 	0.63
+Mean Test Accuracy 		0.61 (0.197)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.317
+Mean Test Recall 		 0.225
+Mean Test F1 Score		 0.237
+
+K-nearest neighbors (KNN)
+-----------------------------------------
+Mean Train Accuracy 	0.77 (0.025)
+Max Train Accuracy 		0.811
+Mean Train Precision 	0.822
+Mean Train Recall 		0.643
+Mean Train F1 Score 	0.721
+Mean Test Accuracy 		0.71 (0.239)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.767
+Mean Test Recall 		 0.608
+Mean Test F1 Score		 0.637
+
+Decision tree (DT)
+-----------------------------------------
+Mean Train Accuracy 	1.0 (0.0)
+Max Train Accuracy 		1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Test Accuracy 		0.61 (0.197)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.558
+Mean Test Recall 		 0.65
+Mean Test F1 Score		 0.552
+
+Random forest (RF)
+-----------------------------------------
+Mean Train Accuracy 	1.0 (0.0)
+Max Train Accuracy 		1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Test Accuracy 		0.635 (0.163)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.583
+Mean Test Recall 		 0.533
+Mean Test F1 Score		 0.5
+
+Ensemble classifier
+-----------------------------------------
+Mean Train Accuracy 	0.837 (0.012)
+Max Train Accuracy 		0.865
+Mean Train Precision 	0.992
+Mean Train Recall 		0.654
+Mean Train F1 Score 	0.788
+Mean Test Accuracy 		0.685 (0.188)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.567
+Mean Test Recall 		 0.483
+Mean Test F1 Score		 0.497
+
+------ NEW RUN: 25.06.22 13:00:16 ------------------------------------------
+Selected features (10):
+['Skew-T6-A2', 'Delta-pow-P4-A2', 'Gamma-pow-CP4-A2', 'Total-pow-F8-A2', 'Skew-FT7-A1', 'Kurt-F7-A1', 'Kurt-FC3-A1', 'Var-Fp2-A2', 'Theta-pow-F8-A2', 'Skew-CP4-A2']
+
+Linear discriminant analysis (LDA)
+-----------------------------------------
+Mean Train Accuracy 	0.843 (0.038)
+Max Train Accuracy 		0.919
+Mean Train Precision 	0.872
+Mean Train Recall 		0.778
+Mean Train F1 Score 	0.821
+Mean Test Accuracy 		0.735 (0.164)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.667
+Mean Test Recall 		 0.75
+Mean Test F1 Score		 0.663
+
+RBF support vector machine (RBFSVM)
+-----------------------------------------
+Mean Train Accuracy 	0.637 (0.044)
+Max Train Accuracy 		0.722
+Mean Train Precision 	0.889
+Mean Train Recall 		0.252
+Mean Train F1 Score 	0.387
+Mean Test Accuracy 		0.61 (0.253)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.25
+Mean Test Recall 		 0.183
+Mean Test F1 Score		 0.2
+
+Linear support vector machine RBF (LSVM)
+-----------------------------------------
+Mean Train Accuracy 	0.664 (0.041)
+Max Train Accuracy 		0.75
+Mean Train Precision 	0.837
+Mean Train Recall 		0.338
+Mean Train F1 Score 	0.476
+Mean Test Accuracy 		0.535 (0.237)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.117
+Mean Test Recall 		 0.15
+Mean Test F1 Score		 0.13
+
+K-nearest neighbors (KNN)
+-----------------------------------------
+Mean Train Accuracy 	0.77 (0.025)
+Max Train Accuracy 		0.811
+Mean Train Precision 	0.822
+Mean Train Recall 		0.643
+Mean Train F1 Score 	0.721
+Mean Test Accuracy 		0.71 (0.239)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.767
+Mean Test Recall 		 0.608
+Mean Test F1 Score		 0.637
+
+Decision tree (DT)
+-----------------------------------------
+Mean Train Accuracy 	1.0 (0.0)
+Max Train Accuracy 		1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Test Accuracy 		0.52 (0.183)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.392
+Mean Test Recall 		 0.575
+Mean Test F1 Score		 0.409
+
+Random forest (RF)
+-----------------------------------------
+Mean Train Accuracy 	1.0 (0.0)
+Max Train Accuracy 		1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Test Accuracy 		0.635 (0.118)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.55
+Mean Test Recall 		 0.583
+Mean Test F1 Score		 0.497
+
+Ensemble classifier
+-----------------------------------------
+Mean Train Accuracy 	0.819 (0.024)
+Max Train Accuracy 		0.865
+Mean Train Precision 	1.0
+Mean Train Recall 		0.609
+Mean Train F1 Score 	0.756
+Mean Test Accuracy 		0.685 (0.219)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.667
+Mean Test Recall 		 0.508
+Mean Test F1 Score		 0.537
+
+------ NEW RUN: 25.06.22 13:00:42 ------------------------------------------
+Selected features (10):
+['Skew-T6-A2', 'Delta-pow-P4-A2', 'Gamma-pow-CP4-A2', 'Total-pow-F8-A2', 'Skew-FT7-A1', 'Kurt-F7-A1', 'Kurt-FC3-A1', 'Var-Fp2-A2', 'Theta-pow-F8-A2', 'Skew-CP4-A2']
+
+Linear discriminant analysis (LDA)
+-----------------------------------------
+Mean Train Accuracy 	0.843 (0.038)
+Max Train Accuracy 		0.919
+Mean Train Precision 	0.872
+Mean Train Recall 		0.778
+Mean Train F1 Score 	0.821
+Mean Test Accuracy 		0.735 (0.164)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.667
+Mean Test Recall 		 0.75
+Mean Test F1 Score		 0.663
+
+RBF support vector machine (RBFSVM)
+-----------------------------------------
+Mean Train Accuracy 	0.637 (0.044)
+Max Train Accuracy 		0.722
+Mean Train Precision 	0.889
+Mean Train Recall 		0.252
+Mean Train F1 Score 	0.387
+Mean Test Accuracy 		0.61 (0.253)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.25
+Mean Test Recall 		 0.183
+Mean Test F1 Score		 0.2
+
+Linear support vector machine RBF (LSVM)
+-----------------------------------------
+Mean Train Accuracy 	0.664 (0.041)
+Max Train Accuracy 		0.75
+Mean Train Precision 	0.837
+Mean Train Recall 		0.338
+Mean Train F1 Score 	0.476
+Mean Test Accuracy 		0.535 (0.237)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.117
+Mean Test Recall 		 0.15
+Mean Test F1 Score		 0.13
+
+K-nearest neighbors (KNN)
+-----------------------------------------
+Mean Train Accuracy 	0.77 (0.025)
+Max Train Accuracy 		0.811
+Mean Train Precision 	0.822
+Mean Train Recall 		0.643
+Mean Train F1 Score 	0.721
+Mean Test Accuracy 		0.71 (0.239)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.767
+Mean Test Recall 		 0.608
+Mean Test F1 Score		 0.637
+
+Decision tree (DT)
+-----------------------------------------
+Mean Train Accuracy 	1.0 (0.0)
+Max Train Accuracy 		1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Test Accuracy 		0.495 (0.201)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.467
+Mean Test Recall 		 0.533
+Mean Test F1 Score		 0.433
+
+Random forest (RF)
+-----------------------------------------
+Mean Train Accuracy 	1.0 (0.0)
+Max Train Accuracy 		1.0
+Mean Train Precision 	1.0
+Mean Train Recall 		1.0
+Mean Train F1 Score 	1.0
+Mean Test Accuracy 		0.61 (0.118)
+Max Test Accuracy 		0.75
+Mean Test Precision 	 0.583
+Mean Test Recall 		 0.583
+Mean Test F1 Score		 0.517
+
+Ensemble classifier
+-----------------------------------------
+Mean Train Accuracy 	0.819 (0.024)
+Max Train Accuracy 		0.865
+Mean Train Precision 	1.0
+Mean Train Recall 		0.609
+Mean Train F1 Score 	0.756
+Mean Test Accuracy 		0.685 (0.219)
+Max Test Accuracy 		1.0
+Mean Test Precision 	 0.667
+Mean Test Recall 		 0.508
+Mean Test F1 Score		 0.537
+

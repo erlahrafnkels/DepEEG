@@ -1,6 +1,5 @@
 import pickle
 import warnings
-from datetime import datetime
 from sys import platform
 
 # import matplotlib.pyplot as plt
@@ -19,18 +18,16 @@ config = OmegaConf.load("config.yaml")
 samp_freq = config.sample_frequency
 healthy_num = config.subject_classes.healthy_num
 depressed_num = config.subject_classes.depressed_num
+frontal = config.electrodes.frontal
+temporal = config.electrodes.temporal
+parietal = config.electrodes.parietal
+occipital = config.electrodes.occipital
+central = config.electrodes.central
 
 # Get root folder based on which operating system I'm working on
 root = "Data/tDCS_EEG_data/"
 if platform == "darwin":
     root = "/Users/erlahrafnkelsdottir/Documents/DepEEG/" + root
-
-
-# def get_subject_id(filename):
-#     name_split = filename.split("_")
-#     subject = name_split[0][1:]
-#     id = int(subject)
-#     return id
 
 
 def make_epochs(df, seconds, overlap):
@@ -66,69 +63,129 @@ def make_epochs(df, seconds, overlap):
 
 
 if __name__ == "__main__":
-    # Let's start by looking only at EYES CLOSED AND PRE DATA, since we are working on task 1 (dep or healthy)
     # Load the data from a pickle file
-    with open(root + "Epochs/116_seconds" + "/all_pre_EC_116s.pickle", "rb") as f:
-        all_pre_EC_116s = pickle.load(f)
+    current_data_file = "all_pre_EC_116s"
+    with open(root + "Epochs/116_seconds/" + current_data_file + ".pickle", "rb") as f:
+        current_dataset = pickle.load(f)
 
-    # Let's then start by looking at these statistical features:
+    # ------------------------------------------------ FEATURES SETUP ------------------------------------------------
+
+    # Create all column names for feature matrix
+    channel_names = current_dataset.columns[:-2]
+    wave_names = ["Delta", "Theta", "Alpha", "Beta", "Gamma"]
+    region_names = ["frontal", "temporal", "parietal", "occipital", "central"]
+    regions = [frontal, temporal, parietal, occipital, central]
+
     # The first four moments of distribution: Mean, variance, skewness and kurtosis
-    # We start by taking the whole segment of each signal as it is, per channel
-    # Create columns for feature matrix
-    channel_names = all_pre_EC_116s.columns[:-2]
     mean_names = ["Mean-" + chan for chan in channel_names]
     var_names = ["Var-" + chan for chan in channel_names]
     skew_names = ["Skew-" + chan for chan in channel_names]
     kurt_names = ["Kurt-" + chan for chan in channel_names]
-    feature_names = mean_names + var_names + skew_names + kurt_names
+    moment_names = mean_names + var_names + skew_names + kurt_names
 
-    # ---------------------------------------------------------------------------------------
-    # Band power trial!
-    # From:
-    # https://raphaelvallat.com/bandpower.html
-    # https://raphaelvallat.com/yasa/build/html/generated/yasa.bandpower.html#yasa.bandpower
-    # https://github.com/raphaelvallat/yasa/blob/master/notebooks/08_bandpower.ipynb
-
-    current_sub = all_pre_EC_116s[all_pre_EC_116s["Subject_ID"] == 12]
-    current_sub = current_sub.iloc[:, :-2]
-    current_sub = current_sub.to_numpy()
-
-    bp = yasa.bandpower(
-        current_sub.T, sf=samp_freq, ch_names=channel_names, relative=False
+    # Absolute spectral power of each frequency band
+    delta_pow_names = ["Delta-pow-" + chan for chan in channel_names]
+    theta_pow_names = ["Theta-pow-" + chan for chan in channel_names]
+    alpha_pow_names = ["Alpha-pow-" + chan for chan in channel_names]
+    beta_pow_names = ["Beta-pow-" + chan for chan in channel_names]
+    gamma_pow_names = ["Gamma-pow-" + chan for chan in channel_names]
+    power_names = (
+        delta_pow_names
+        + theta_pow_names
+        + alpha_pow_names
+        + beta_pow_names
+        + gamma_pow_names
     )
-    print(bp)
 
-    # ---------------------------------------------------------------------------------------
+    total_pow_names = ["Total-pow-" + chan for chan in channel_names]
+    regional_pow_names = []
+    for r in region_names:
+        for w in wave_names:
+            name = w + "-pow-" + r
+            regional_pow_names.append(name)
+        tot_name = "Total-pow-" + r
+        regional_pow_names.append(tot_name)
+    power_names = power_names + total_pow_names + regional_pow_names
+
+    # All feature names in one vector
+    feature_names = moment_names + power_names
+
+    # ------------------------------------------------ FEATURE CALCULATIONS ------------------------------------------
 
     # Create empty lists for feature matrix
     feature_mat = []
     targets = []
 
+    # Specify frequency bands for spectral power calculations
+    bands = [
+        (0.5, 4, "Delta"),
+        (4, 8, "Theta"),
+        (8, 12, "Alpha"),
+        (12, 35, "Beta"),
+        (35, 40, "Gamma"),
+    ]
+
     # List of subject numbers present in data table
-    subject_ids = all_pre_EC_116s["Subject_ID"].unique()
+    subject_ids = current_dataset["Subject_ID"].unique()
 
     # Iterate over all subjects and get the stats for each channel, for each subject
     for sub in subject_ids:
         # Get subtable for subject and depression value
-        current_sub = all_pre_EC_116s[all_pre_EC_116s["Subject_ID"] == sub]
+        current_sub = current_dataset[current_dataset["Subject_ID"] == sub]
         is_depressed = current_sub["Depressed"].iloc[0]
         current_sub = current_sub.iloc[:, :-2]
         current_sub = current_sub.to_numpy()
 
-        # Calculate statistics per channel
+        # Calculate moment statistics per channel
         means = np.mean(current_sub, axis=0)
         vars = np.var(current_sub, axis=0)
         skews = skew(current_sub, axis=0)
         kurts = kurtosis(current_sub, axis=0)
 
+        # Calculate absolute spectral power of each frequency band, per channel
+        # From https://raphaelvallat.com/yasa/build/html/generated/yasa.bandpower.html#yasa.bandpower
+        bp = yasa.bandpower(
+            current_sub.T,
+            sf=samp_freq,
+            ch_names=channel_names,
+            bands=bands,
+            relative=False,
+        )
+        bp = bp.T
+
+        # Power of each wave per channel
+        bp_waves = []
+        for i in range(6):
+            bp_waves.append(bp.iloc[i])
+
+        # Mean power for each brain region
+        regions_power = []
+        for r in regions:
+            for w in bp_waves:
+                pow = w.loc[r].to_numpy()
+                regions_power.append(np.mean(pow))
+
+        # Convert waves-per-channel vectors to numpy
+        bp_waves_np = []
+        for w in bp_waves:
+            bp_waves_np.append(w.to_numpy())
+
+        # And flatten the list
+        bp_waves_np_flat = [x for xs in bp_waves_np for x in xs]
+
         # Concatenate arrays to make the whole row for the subject, for inserting into the feature matrix
-        feature_row = np.concatenate((means, vars, skews, kurts))
+        feature_row = np.concatenate(
+            (means, vars, skews, kurts, bp_waves_np_flat, regions_power)
+        )
         targets.append([sub, is_depressed])
         feature_mat.append(feature_row)
 
+    # ------------------------------------------------ FEATURE MATRIX ------------------------------------------------
+
     # When feature matrix has been filled with values, we normalize it
-    feature_mat = np.array(feature_mat)
+    eature_mat = np.array(feature_mat).astype(float)
     feature_mat = zscore(feature_mat, axis=None)
+    # feature_mat = zscore(feature_mat, axis=1)
     targets = np.array(targets)
 
     # Then put it into a dataframe so we have the column names
@@ -138,17 +195,15 @@ if __name__ == "__main__":
 
     save_features = True
     if save_features:
-        # Datetime object containing current date and time, for saving feature_df files
-        now = datetime.now()
-        dt_string = now.strftime("%d.%m.%y_%H:%M:%S")
-
         # Save feature matrix as .pickle file
-        with open(root + "Features_and_output" + "/feature_df.pickle", "wb") as f:
+        with open(
+            root + "Features_and_output/feature_df_" + current_data_file + ".pickle",
+            "wb",
+        ) as f:
             pickle.dump(feature_df, f)
-
         print("Feature matrix saved.")
 
-    # ------------------------------------------------ VMD STUFF ------------------------------------------------
+    # ------------------------------------------------ VMD STUFF ------------------------------------------------brain
 
     """
     PAPER: Epilepsy seizure detection using kurtosis based VMD's parameters selection and bandwidth features
@@ -304,28 +359,4 @@ if __name__ == "__main__":
     plt.suptitle("Eyes open pre-treatment data features", fontsize="x-large")
 
     plt.show()
-
-    # ------------------------------ MODEL WITH NUMPY ------------------------------
-
-    # And convert back to numpy for the classification
-    # --- I know going back and forth is a little stupid but I don't have time to optimize :') ---
-    X_train = features_train.to_numpy()
-    X_test = features_test.to_numpy()
-    y_train = targets_train.to_numpy()
-    y_test = targets_test.to_numpy()
-
-    print("X train shape:\t", X_train.shape)
-    print("X test shape:\t", X_test.shape)
-    print("y train shape:\t", y_train.shape)
-    print("y test shape:\t", y_test.shape)
-
-    # Try first classifier!!!
-    LDA = LinearDiscriminantAnalysis()
-    LDA.fit(X_train, y_train)
-    print("--- TRUE ---")
-    print(y_test)
-    print("--- PREDICTION ---")
-    print(LDA.predict(X_test))
-    print("--- ACCURACY ---")
-    print(LDA.score(X_test, y_test))
     """
