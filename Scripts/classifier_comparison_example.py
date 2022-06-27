@@ -19,7 +19,7 @@ from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 from sklearn.inspection import DecisionBoundaryDisplay
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeClassifier, plot_tree
 
 warnings.filterwarnings("ignore")
 
@@ -187,6 +187,11 @@ for name, clf in zip(names, classifiers):
     DecisionBoundaryDisplay.from_estimator(
         clf, X, cmap=cm, alpha=0.8, ax=ax  # , eps=0.5
     )
+
+    if name == "Decision tree (DT)":
+        plt.figure()
+        plot_tree(clf, filled=True)
+        plt.show()
 
     # Plot the training points
     ax.scatter(X_train[:, 0], X_train[:, 1], c=y_train, cmap=cm_bright, edgecolors="k")

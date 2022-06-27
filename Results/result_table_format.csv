@@ -1,0 +1,8 @@
+Classifier,Mean accuracy,Standard deviation,Precision,Recall,F1-score,Model parameters,Features
+LDA,,,,,,,
+SVM (RBF),,,,,,,
+SVM (Lin),,,,,,,
+KNN,,,,,,,
+DT,,,,,,,
+RF,,,,,,,
+E-MV,,,,,,,

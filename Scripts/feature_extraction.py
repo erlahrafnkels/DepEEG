@@ -72,6 +72,7 @@ if __name__ == "__main__":
 
     # Create all column names for feature matrix
     channel_names = current_dataset.columns[:-2]
+    channel_names = [c[:-3] for c in channel_names]
     wave_names = ["Delta", "Theta", "Alpha", "Beta", "Gamma"]
     region_names = ["frontal", "temporal", "parietal", "occipital", "central"]
     regions = [frontal, temporal, parietal, occipital, central]
@@ -128,7 +129,7 @@ if __name__ == "__main__":
     # List of subject numbers present in data table
     subject_ids = current_dataset["Subject_ID"].unique()
 
-    # Iterate over all subjects and get the stats for each channel, for each subject
+    # Iterate over all subjects and get the features for each channel, for each subject
     for sub in subject_ids:
         # Get subtable for subject and depression value
         current_sub = current_dataset[current_dataset["Subject_ID"] == sub]
@@ -154,28 +155,28 @@ if __name__ == "__main__":
         bp = bp.T
 
         # Power of each wave per channel
-        bp_waves = []
+        bp_power = []
         for i in range(6):
-            bp_waves.append(bp.iloc[i])
+            bp_power.append(bp.iloc[i])
 
         # Mean power for each brain region
         regions_power = []
         for r in regions:
-            for w in bp_waves:
+            for w in bp_power:
                 pow = w.loc[r].to_numpy()
                 regions_power.append(np.mean(pow))
 
         # Convert waves-per-channel vectors to numpy
-        bp_waves_np = []
-        for w in bp_waves:
-            bp_waves_np.append(w.to_numpy())
+        bp_power_np = []
+        for w in bp_power:
+            bp_power_np.append(w.to_numpy())
 
         # And flatten the list
-        bp_waves_np_flat = [x for xs in bp_waves_np for x in xs]
+        bp_power_np_flat = [x for xs in bp_power_np for x in xs]
 
         # Concatenate arrays to make the whole row for the subject, for inserting into the feature matrix
         feature_row = np.concatenate(
-            (means, vars, skews, kurts, bp_waves_np_flat, regions_power)
+            (means, vars, skews, kurts, bp_power_np_flat, regions_power)
         )
         targets.append([sub, is_depressed])
         feature_mat.append(feature_row)
@@ -183,7 +184,7 @@ if __name__ == "__main__":
     # ------------------------------------------------ FEATURE MATRIX ------------------------------------------------
 
     # When feature matrix has been filled with values, we normalize it
-    eature_mat = np.array(feature_mat).astype(float)
+    feature_mat = np.array(feature_mat).astype(float)
     feature_mat = zscore(feature_mat, axis=None)
     # feature_mat = zscore(feature_mat, axis=1)
     targets = np.array(targets)
@@ -193,7 +194,7 @@ if __name__ == "__main__":
     feature_df["Subject_ID"] = targets[:, 0]
     feature_df["Depression"] = targets[:, 1]
 
-    save_features = True
+    save_features = False
     if save_features:
         # Save feature matrix as .pickle file
         with open(

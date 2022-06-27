@@ -34,20 +34,19 @@ electrodes:
     'T5-A1', 'P3-A1', 'Pz-A2', 'P4-A2', 'T6-A2', 'O1-A1', 'O2-A2',
   ]
   frontal: [
-    'Fp1-A1', 'Fpz-A1', 'Fp2-A2', 'F7-A1', 'F3-A1', 'Fz-A1', 'F4-A2', 'F8-A2', 'FT7-A1', 'FC3-A1', 'FCz-A1', 'FC4-A2',
-    'FT8-A2'
+    'Fp1', 'Fpz', 'Fp2', 'F7', 'F3', 'Fz', 'F4', 'F8', 'FT7', 'FC3', 'FCz', 'FC4', 'FT8'
   ]
   temporal: [
-    'T4-A2', 'TP7-A1', 'TP8-A2', 'T5-A1', 'T6-A2'
+    'T4', 'TP7', 'TP8', 'T5', 'T6'
   ]
   parietal: [
-    'P3-A1', 'Pz-A2', 'P4-A2',
+    'P3', 'Pz', 'P4',
   ]
   occipital: [
-    'O1-A1', 'Oz-A2', 'O2-A2'
+    'O1', 'Oz', 'O2'
   ]
   central: [
-    'C3-A1', 'Cz-A2', 'C4-A2', 'CP3-A1', 'CPz-A2', 'CP4-A2'
+    'C3', 'Cz', 'C4', 'CP3', 'CPz', 'CP4'
   ]
   reference_electrodes:
     A1ref: [

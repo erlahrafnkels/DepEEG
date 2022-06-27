@@ -5,17 +5,20 @@ from sys import platform
 
 import matplotlib.pyplot as plt
 import numpy as np
-
-# import seaborn as sns
+import pandas as pd
 from mrmr import mrmr_classif
 from omegaconf import OmegaConf
 from scipy.stats import zscore
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.ensemble import RandomForestClassifier, VotingClassifier
-from sklearn.model_selection import GroupKFold, LeaveOneGroupOut, cross_validate
+from sklearn.model_selection import GroupKFold  # , LeaveOneGroupOut
+from sklearn.model_selection import cross_validate
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
+
+# import seaborn as sns
+
 
 warnings.filterwarnings("ignore")
 # sys.setrecursionlimit(3 * sys.getrecursionlimit())
@@ -65,21 +68,39 @@ def plot_features_hist(feature_h, feature_d, bins, title):
     return fig
 
 
+def results_to_table(mean, std, pre, rec, f1, par, feat, file):
+    # Read and fill in table
+    res_df = pd.read_csv("Results/result_table_format.csv")
+    res_df["Mean accuracy"] = mean
+    res_df["Standard deviation"] = std
+    res_df["Precision"] = pre
+    res_df["Recall"] = rec
+    res_df["F1-score"] = f1
+    res_df["Model parameters"] = par
+    res_df["Features"] = feat
+
+    # Save table
+    now = datetime.now()
+    dt_string = now.strftime("%d.%m.%y_%H.%M.%S")
+    no_features = str(len(feat[0]))
+    filename = "results_" + no_features + "_" + file + "_" + dt_string + ".csv"
+    res_df.to_csv("Results/" + filename, sep=",", index=False)
+
+    return
+
+
 def CV_output(scores):
-    train_acc_std = round(scores["train_accuracy"].std(), 3)
-    test_acc_std = round(scores["test_accuracy"].std(), 3)
-    return [
-        f"Mean Train Accuracy \t{round(scores['train_accuracy'].mean(), 3)} ({train_acc_std})",
-        f"Max Train Accuracy \t\t{round(scores['train_accuracy'].max(), 3)}",
-        f"Mean Train Precision \t{round(scores['train_precision'].mean(), 3)}",
-        f"Mean Train Recall \t\t{round(scores['train_recall'].mean(), 3)}",
-        f"Mean Train F1 Score \t{round(scores['train_f1'].mean(), 3)}",
-        f"Mean Test Accuracy \t\t{round(scores['test_accuracy'].mean(), 3)} ({test_acc_std})",
-        f"Max Test Accuracy \t\t{round(scores['test_accuracy'].max(), 3)}",
-        f"Mean Test Precision \t {round(scores['test_precision'].mean(), 3)}",
-        f"Mean Test Recall \t\t {round(scores['test_recall'].mean(), 3)}",
-        f"Mean Test F1 Score\t\t {round(scores['test_f1'].mean(), 3)}",
-    ]
+    # Print main results
+    train_acc = round(scores["train_accuracy"].mean(), 3)
+    test_acc = round(scores["test_accuracy"].mean(), 3)
+    train_std = round(scores["train_accuracy"].std(), 3)
+    test_std = round(scores["test_accuracy"].std(), 3)
+    print(name)
+    print("-----------------------------------------")
+    print(f"Mean (std) train acc: {train_acc} ({train_std})")
+    print(f"Mean (std) test acc: {test_acc} ({test_std})")
+    print()
+    return
 
 
 if __name__ == "__main__":
@@ -137,7 +158,8 @@ if __name__ == "__main__":
     # However, paper also says that a larger number have shown notable success
 
     # Using MRMR (Minimum Redundancy - Maximum Relevance)
-    selected_features = mrmr_classif(X=X, y=y, K=8)
+    K = 8
+    selected_features = mrmr_classif(X=X, y=y, K=K)
 
     print("SELECTED FEATURES (", len(selected_features), "):")
     print(selected_features)
@@ -195,23 +217,18 @@ if __name__ == "__main__":
     # For cross-validation, we use the GROUP functions which will ensure that the same subject
     # can not be present both in train and test sets
     # This matters when/if we will use epoched data
-    logo = LeaveOneGroupOut()
-    gkf = GroupKFold(n_splits=10)
+    no_cv_splits = 10
+    gkf = GroupKFold(n_splits=no_cv_splits)
+    # logo = LeaveOneGroupOut()
 
-    # Write time and selected features to classification_output.txt for saving results
-    write_output = True
-    if write_output:
-        now = datetime.now()
-        dt_string = now.strftime("%d.%m.%y %H:%M:%S")
-        with open("classification_output.txt", "a") as o:
-            o.write(
-                "------ NEW RUN: "
-                + dt_string
-                + " ------------------------------------------\n"
-            )
-            o.write("Selected features (" + str(len(selected_features)) + "):\n")
-            o.write(str(selected_features) + "\n")
-            o.write("\n")
+    # Initiate lists for accumulating results
+    mean_acc_vals = []
+    std_vals = []
+    precision_vals = []
+    recall_vals = []
+    f1_score_vals = []
+    mdl_param_vals = []
+    sel_feat = []
 
     # Iterate over classifiers
     for name, clf in zip(clf_names, classifiers):
@@ -229,89 +246,34 @@ if __name__ == "__main__":
             return_train_score=True,
         )
 
+        # Get values for results table
+        mean_acc_vals.append(round(scores["test_accuracy"].mean(), 3))
+        std_vals.append(round(scores["test_accuracy"].std(), 3))
+        precision_vals.append(round(scores["test_precision"].mean(), 3))
+        recall_vals.append(round(scores["test_recall"].mean(), 3))
+        f1_score_vals.append(round(scores["test_f1"].mean(), 3))
+        if name == "Linear discriminant analysis (LDA)":
+            sel_feat.append(selected_features)
+        else:
+            sel_feat.append(None)
+        if clf != eclf:
+            mdl_param_vals.append(clf.get_params())
+        else:
+            mdl_param_vals.append(None)
+
         # Print main results
-        train_acc_std = round(scores["train_accuracy"].std(), 3)
-        test_acc_std = round(scores["test_accuracy"].std(), 3)
-        print(name)
-        print("-----------------------------------------")
-        print(
-            f"Mean (std) train accuracy: {round(scores['train_accuracy'].mean(), 3)} ({train_acc_std})"
+        CV_output(scores)
+
+    # Results into results table
+    save_results = False
+    if save_results:
+        results_to_table(
+            mean_acc_vals,
+            std_vals,
+            precision_vals,
+            recall_vals,
+            f1_score_vals,
+            mdl_param_vals,
+            sel_feat,
+            current_feature_file,
         )
-        print(
-            f"Mean (std) test accuracies: {round(scores['test_accuracy'].mean(), 3)} ({test_acc_std})"
-        )
-        print()
-
-        # Write all results to classification_output.txt
-        if write_output:
-            output = CV_output(scores)
-            with open("classification_output.txt", "a") as o:
-                o.write(name + "\n")
-                o.write("-----------------------------------------" + "\n")
-                for i in output:
-                    o.write(i + "\n")
-                o.write("\n")
-
-    """
-        # print(scores.keys())
-        # print("%0.3f accuracy with a standard deviation of %0.3f" % (scores.mean(), scores.std()))
-        # print("Accuracy:", clf.score(X_test, y_test))
-        # print('Accuracy: %.3f (%.3f)' % (np.mean(scores), np.std(scores)))
-        #print(
-        #    "Train accuracy: %.3f (%.3f)"
-        #    % (np.mean(scores["train_accuracy"]), np.std(scores["train_accuracy"]))
-        #)
-        #print(
-        #    "Test accuracy: %.3f (%.3f)"
-        #    % (np.mean(scores["test_accuracy"]), np.std(scores["test_accuracy"]))
-        #)
-
-        # final_model = cross_val.best_estimator_
-        # clf.fit(X_train, y_train)
-        # train_predictions = clf.predict(X_train)
-        # val_predictions = final_model.predict(X_val)
-        # test_predictions = clf.predict(X_test)
-
-        # print('Train Score:', accuracy_score(train_predictions, y_train)) # .99
-        # print('Val Score:', accuracy_score(val_predictions, y_val)) # .89
-        # print('Test Score:', accuracy_score(test_predictions, y_test)) # .8
-
-
-    # Empty array to fill with predictions from each model
-    # preds = []
-
-    # Iterate over classifiers
-    for name, clf in zip(clf_names, classifiers):
-        # Evaluate model
-        # clf.fit(X_train, y_train)
-        # y_pred = clf.predict(X_test)
-        # preds.append(y_pred)
-        # scores = cross_validate(clf, X, y, scoring="accuracy", cv=logo, n_jobs=-1, return_train_score=True)
-        scores = cross_val_score(clf, X, y, scoring="accuracy", cv=logo, n_jobs=-1)
-        # report performance
-        # clf_dict["Name"] = name
-        # clf_dict["Pred"] = y_pred
-        print(name)
-        print("Accuracy:", clf.score(X_test, y_test))
-        # print('Accuracy: %.3f (%.3f)' % (np.mean(scores), np.std(scores)))
-        # print('Train accuracy: %.3f (%.3f)' % (np.mean(scores["train_score"]), np.std(scores["train_score"])))
-        # print('Test accuracy: %.3f (%.3f)' % (np.mean(scores["test_score"]), np.std(scores["test_score"])))
-        print()
-
-    # print(preds)
-
-    # cm = confusion_matrix(y_test, preds[0])
-    # cm_display = ConfusionMatrixDisplay(cm).plot()
-    # plt.show()
-
-
-    clf.fit(X_train, y_train)
-    print(f"----------- {name} -----------")
-    print("--- True:")
-    print(y_test.to_numpy())
-    print("--- Prediction:")
-    print(clf.predict(X_test))
-    print("--- Accuracy:")
-    print(clf.score(X_test, y_test))
-    print()
-    """
