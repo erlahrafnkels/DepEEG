@@ -8,6 +8,8 @@ pre-commit==2.17.0
 omegaconf==2.1.1
 matplotlib==3.4.3
 mne==1.0.0
+mrmr==0.2.5
 scipy==1.7.1
 sklearn==0.24.2
-pickle==4.0
+vmdpy==0.2
+yasa==0.6.1
