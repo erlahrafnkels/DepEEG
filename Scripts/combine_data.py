@@ -168,6 +168,40 @@ def create_combined_dfs():
 
     print("EO POST combined dataframe SAVED.")
 
+    # -------------- ALL PRE combined dataframe --------------
+
+    with open(root + "116_seconds/all_pre_EC_116s.pickle", "rb") as f:
+        pre_ec = pickle.load(f)
+
+    with open(root + "116_seconds/all_pre_EO_116s.pickle", "rb") as f:
+        pre_eo = pickle.load(f)
+
+    pre_ec["EO"] = 0
+    pre_eo["EO"] = 1
+
+    all_pre = pd.concat([pre_ec, pre_eo], axis=0, ignore_index=True)
+
+    # Save as .pickle
+    with open(root + "116_seconds/all_pre_116s.pickle", "wb") as f:
+        pickle.dump(all_pre, f)
+
+    # -------------- ALL POST combined dataframe --------------
+
+    with open(root + "116_seconds/all_post_EC_116s.pickle", "rb") as f:
+        post_ec = pickle.load(f)
+
+    with open(root + "116_seconds/all_post_EO_116s.pickle", "rb") as f:
+        post_eo = pickle.load(f)
+
+    post_ec["EO"] = 0
+    post_eo["EO"] = 1
+
+    all_post = pd.concat([post_ec, post_eo], axis=0, ignore_index=True)
+
+    # Save as .pickle
+    with open(root + "116_seconds/all_post_116s.pickle", "wb") as f:
+        pickle.dump(all_post, f)
+
     # -------------- EVERYTHING IN ONE DATAFRAME --------------
 
     # Add pre/post and EO/EC columns

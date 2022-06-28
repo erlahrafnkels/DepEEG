@@ -29,24 +29,46 @@ electrodes:
   # An Optimal Channel Selection for EEG-Based Depression Detection via Kernel-Target Alignment
   # Electroencephalogram (EEG)-based computer-aided technique to diagnose major depressive disorder (MDD)
   # -------> Tried using only these and classification got worse...
-  chosen_electrodes: [
+  chosen_electrodes_v1: [
     'Fp1-A1', 'Fpz-A1', 'Fp2-A2', 'F7-A1', 'F3-A1', 'Fz-A1', 'F4-A2', 'F8-A2', 'C3-A1', 'Cz-A2', 'C4-A2', 'T4-A2',
     'T5-A1', 'P3-A1', 'Pz-A2', 'P4-A2', 'T6-A2', 'O1-A1', 'O2-A2',
   ]
-  frontal: [
+  frontal_v1: [
     'Fp1', 'Fpz', 'Fp2', 'F7', 'F3', 'Fz', 'F4', 'F8', 'FT7', 'FC3', 'FCz', 'FC4', 'FT8'
   ]
-  temporal: [
+  temporal_v1: [
     'T4', 'TP7', 'TP8', 'T5', 'T6'
   ]
-  parietal: [
+  parietal_v1: [
     'P3', 'Pz', 'P4',
   ]
-  occipital: [
+  occipital_v1: [
     'O1', 'Oz', 'O2'
   ]
-  central: [
+  central_v1: [
     'C3', 'Cz', 'C4', 'CP3', 'CPz', 'CP4'
+  ]
+  # Chosen electrodes version 2, based on paper:
+  # Depression recognition using machine learning methods with different feature generation strategies
+  # 16 minus T3 -> 15
+  chosen_electrodes: [
+    'Fp1-A1', 'Fp2-A2', 'F7-A1', 'F3-A1', 'F4-A2', 'F8-A2', 'C3-A1', 'C4-A2', 'T4-A2', 'T5-A1', 'P3-A1', 'P4-A2',
+    'T6-A2', 'O1-A1', 'O2-A2',
+  ]
+  frontal: [
+    'Fp1', 'Fp2', 'F7', 'F3', 'F4', 'F8'
+  ]
+  temporal: [
+    'T4', 'T5', 'T6'
+  ]
+  parietal: [
+    'P3', 'P4',
+  ]
+  occipital: [
+    'O1', 'O2'
+  ]
+  central: [
+    'C3', 'C4'
   ]
   reference_electrodes:
     A1ref: [

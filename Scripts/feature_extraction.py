@@ -2,7 +2,7 @@ import pickle
 import warnings
 from sys import platform
 
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import yasa
@@ -23,6 +23,7 @@ temporal = config.electrodes.temporal
 parietal = config.electrodes.parietal
 occipital = config.electrodes.occipital
 central = config.electrodes.central
+color_codes = [c[1] for c in config.colors.items()]
 
 # Get root folder based on which operating system I'm working on
 root = "Data/tDCS_EEG_data/"
@@ -71,7 +72,11 @@ if __name__ == "__main__":
     # ------------------------------------------------ FEATURES SETUP ------------------------------------------------
 
     # Create all column names for feature matrix
-    channel_names = current_dataset.columns[:-2]
+    channel_names = []
+    if any(x in current_data_file for x in ["EC", "EO"]):
+        channel_names = current_dataset.columns[:-2]
+    else:
+        channel_names = current_dataset.columns[:-3]
     channel_names = [c[:-3] for c in channel_names]
     wave_names = ["Delta", "Theta", "Alpha", "Beta", "Gamma"]
     region_names = ["frontal", "temporal", "parietal", "occipital", "central"]
@@ -111,6 +116,74 @@ if __name__ == "__main__":
     # All feature names in one vector
     feature_names = moment_names + power_names
 
+    # ------------------------------------------------ VMD STUFF ------------------------------------------------
+
+    """
+    PAPER: Epilepsy seizure detection using kurtosis based VMD's parameters selection and bandwidth features
+    AUTHORS: Sukriti, Monisha Chakraborty, Debjani Mitra
+
+    The proposed methodology is described as follows:
+
+    Step 1: A range of K and alpha is set such that K = 1-15 with an interval of 1 and
+            alpha = 100-15000 with an interval of 100.
+    Step 2: A new signal is formulated such that it consists of 10 s of EEG segments from each of the datasets
+            Z, F and S.
+    Step 3: The new signal is decomposed by VMD for all possible combinations of K and alpha to obtain K BIMFs.
+    Step 4: The BIMFs are then summed up to obtain the reconstruction signal for each decomposition.
+    Step 5: Kurtosis of each reconstructed signal is determined.
+    Step 6: The value of K and alpha for which kurtosis is maximum is recorded.
+    Step 7: Lastly, the five sets of EEG data (Z, O, N, F and S) are decomposed into BIMFs by VMD under the
+            recorded value of K and alpha.
+    """
+
+    # Step 1: Parameters for VMD proposed in the paper
+    K = np.arange(1, 16, 1)  # Number of decomposed nodes
+    alpha = np.arange(100, 15100, 100)  # Data-fidelity constraint parameter
+    tau = 0  # Time step of dual ascent
+    DC = 0  # Number of DC components
+    init = 1  # Value of initial frequency for the decomposed modes
+    tol = 1e-6  # Tolerance value for convergence criteria
+
+    # Step 2: Split data into 10-second epochs
+    # make_epochs(all_pre_EC_116s, 10, 0.5)  # --> Already done, comment out
+    with open(root + "Epochs/10_seconds" + "/all_pre_EC_10s_epochs.pickle", "rb") as f:
+        df10 = pickle.load(f)
+
+    # Step 3: Run VMD
+    # Outputs:
+    # u       - the collection of decomposed modes/BIMFs
+    # u_hat   - spectra of the modes
+    # omega   - estimated mode center-frequencies
+
+    subjects = df10["Subject_ID"].unique()
+    epochs = df10["Epoch"].unique()
+    channels = df10.columns[:-3]
+
+    sub_df10 = df10[(df10["Subject_ID"] == 5) & (df10["Epoch"] == 0)]
+    f = sub_df10["Fp1-A1"]
+
+    K = 9
+    alpha = 9800
+
+    u, _, _ = VMD(f, alpha, tau, K, DC, init, tol)
+    u_sum = u.sum(axis=0)
+    modes = len(u)
+
+    # Visualize decomposed modes
+    plt.figure(figsize=(8, 8))
+    plt.subplot(K + 1, 1, 1)
+    plt.plot(f, color=color_codes[0])
+    plt.xticks([])
+    plt.yticks([])
+    plt.title("Original signal (red) and BIMFs (orange)")
+    for m in range(K):
+        plt.subplot(K + 1, 1, m + 2)
+        plt.plot(u[m].T, color=color_codes[6])
+        plt.xticks([])
+        plt.yticks([])
+    plt.subplots_adjust(wspace=0, hspace=0)
+    plt.show()
+
     # ------------------------------------------------ FEATURE CALCULATIONS ------------------------------------------
 
     # Create empty lists for feature matrix
@@ -134,7 +207,10 @@ if __name__ == "__main__":
         # Get subtable for subject and depression value
         current_sub = current_dataset[current_dataset["Subject_ID"] == sub]
         is_depressed = current_sub["Depressed"].iloc[0]
-        current_sub = current_sub.iloc[:, :-2]
+        if any(x in current_data_file for x in ["EC", "EO"]):
+            current_sub = current_sub.iloc[:, :-2]
+        else:
+            current_sub = current_sub.iloc[:, :-3]
         current_sub = current_sub.to_numpy()
 
         # Calculate moment statistics per channel
@@ -204,80 +280,7 @@ if __name__ == "__main__":
             pickle.dump(feature_df, f)
         print("Feature matrix saved.")
 
-    # ------------------------------------------------ VMD STUFF ------------------------------------------------brain
-
     """
-    PAPER: Epilepsy seizure detection using kurtosis based VMD's parameters selection and bandwidth features
-    AUTHORS: Sukriti, Monisha Chakraborty, Debjani Mitra
-
-    The proposed methodology is described as follows:
-
-    Step 1: A range of K and alpha is set such that K = 1-15 with an interval of 1 and
-            alpha = 100-15000 with an interval of 100.
-    Step 2: A new signal is formulated such that it consists of 10 s of EEG segments from each of the datasets
-            Z, F and S.
-    Step 3: The new signal is decomposed by VMD for all possible combinations of K and alpha to obtain K BIMFs.
-    Step 4: The BIMFs are then summed up to obtain the reconstruction signal for each decomposition.
-    Step 5: Kurtosis of each reconstructed signal is determined.
-    Step 6: The value of K and alpha for which kurtosis is maximum is recorded.
-    Step 7: Lastly, the five sets of EEG data (Z, O, N, F and S) are decomposed into BIMFs by VMD under the
-            recorded value of K and alpha.
-    """
-
-    # Step 1: Parameters for VMD proposed in the paper
-    K = np.arange(1, 16, 1)  # Number of decomposed nodes
-    alpha = np.arange(100, 15100, 100)  # Data-fidelity constraint parameter
-    tau = 0  # Time step of dual ascent
-    DC = 0  # Number of DC components
-    init = 1  # Value of initial frequency for the decomposed modes
-    tol = 1e-6  # Tolerance value for convergence criteria
-
-    # Step 2: Split data into 10-second epochs
-    # make_epochs(all_pre_EC_116s, 10, 0.5)  # --> Already done, comment out
-    with open(root + "Epochs/10_seconds" + "/all_pre_EC_10s_epochs.pickle", "rb") as f:
-        df10 = pickle.load(f)
-
-    # Step 3: Run VMD
-    # Outputs:
-    # u       - the collection of decomposed modes/BIMFs
-    # u_hat   - spectra of the modes
-    # omega   - estimated mode center-frequencies
-
-    subjects = df10["Subject_ID"].unique()
-    epochs = df10["Epoch"].unique()
-    channels = df10.columns[:-3]
-
-    """ sub_df10 = df10[(df10["Subject_ID"] == 12) & (df10["Epoch"] == 0)]
-    f = sub_df10["Fp1-A1"]
-
-    K = 3
-    alpha = 2000
-
-    u, _, _ = VMD(f, alpha, tau, K, DC, init, tol)
-    u_sum = u.sum(axis=0)
-
-    #. Visualize decomposed modes
-    plt.figure(figsize=(14,14))
-    plt.subplot(5,1,1)
-    plt.plot(f)
-    plt.title('Original signal')
-    plt.subplot(5,1,2)
-    plt.plot(u[0].T)
-    plt.title('Decomposed mode 1')
-    plt.subplot(5,1,3)
-    plt.plot(u[1].T)
-    plt.title('Decomposed mode 2')
-    plt.subplot(5,1,4)
-    plt.plot(u[2].T)
-    plt.title('Decomposed mode 3')
-    plt.subplot(5,1,5)
-    plt.plot(u_sum.T)
-    plt.title('Reconstructed signal')
-    plt.xlabel('Datapoints')
-    #plt.legend(['Mode %d'%m_i for m_i in range(u.shape[0])])
-    #plt.tight_layout()
-    plt.show() """
-
     max_kurt = 0
     best_K = 0
     best_alpha = 0
@@ -308,7 +311,6 @@ if __name__ == "__main__":
     print("Best K:", best_K)
     print("Best alpha:", best_alpha)
 
-    """
     # ------------------------------------------------ PLOTTING ------------------------------------------------
 
     mean_df = feature_df[feature_df.columns.intersection(mean_names + ["Depression"])]

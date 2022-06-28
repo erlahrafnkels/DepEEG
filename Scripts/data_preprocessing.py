@@ -11,7 +11,7 @@ import pandas as pd
 from matplotlib.gridspec import GridSpec
 from omegaconf import OmegaConf
 from plot_signals import plot_record
-from plot_title import make_plot_title
+# from plot_title import make_plot_title
 from scipy import signal
 from scipy.stats import zscore
 from sklearn.decomposition import FastICA
@@ -203,7 +203,7 @@ def plot_example_process(filename, subject, low_freq, high_freq):
     x = np.linspace(0, points / samp_freq, points)
 
     # Make one big plot
-    fig = plt.figure(figsize=(14, 10))
+    fig = plt.figure(figsize=(12, 10))
     gs = GridSpec(3, 2, figure=fig)
     ax1 = fig.add_subplot(gs[0, 0])
     ax2 = fig.add_subplot(gs[0, 1])
@@ -234,7 +234,7 @@ def plot_example_process(filename, subject, low_freq, high_freq):
 
     # Original signal with the filters
     ax4.plot(x, signal_filtered, color=config.colors.dtu_red)
-    ax4.set_title("Data filtered")
+    ax4.set_title("Data filtered between 0.5 and 40 Hz")
     ax4.set_xlabel("Time [s]")
     ax4.grid()
 
@@ -244,7 +244,7 @@ def plot_example_process(filename, subject, low_freq, high_freq):
     ax5.set_xlabel("Time [s]")
     ax5.grid()
 
-    fig.suptitle(make_plot_title(filename), fontsize="xx-large")
+    # fig.suptitle(make_plot_title(filename), fontsize="xx-large")
     fig.tight_layout()
 
     return fig
@@ -326,13 +326,49 @@ if __name__ == "__main__":
         filter_and_ica(data_path, subjects)
         print("Filtered and ICA files saved.")
 
+    # Plot only raw signal
+    plot_raw = False
+    if plot_raw:
+        # Read in raw, cleaned data
+        filename = "S1/S1_pre_EC.txt"
+        data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
+        data = pd.read_csv(data_path + filename, sep="\t", index_col=False)
+        no1 = data.columns[0][:-3]
+        no2 = data.columns[14][:-3]
+        no3 = data.columns[25][:-3]
+        raw1 = data.iloc[:, 0]
+        raw2 = data.iloc[:, 14]
+        raw3 = data.iloc[:, 25]
+
+        # Set up x-axis in time domain
+        points = raw1.shape[0]
+        x = np.linspace(0, points / samp_freq, points)
+
+        # Plot
+        plt.figure(figsize=(12, 8))
+        plt.subplot(3, 1, 1)
+        plt.plot(x, raw1, color=config.colors.dtu_red)
+        plt.title("Raw signal of channel " + no1)
+        plt.grid()
+        plt.subplot(3, 1, 2)
+        plt.plot(x, raw2, color=config.colors.dtu_red)
+        plt.title("Raw signal of channel " + no2)
+        plt.grid()
+        plt.subplot(3, 1, 3)
+        plt.plot(x, raw3, color=config.colors.dtu_red)
+        plt.title("Raw signal of channel " + no3)
+        plt.xlabel("Time [s]")
+        plt.grid()
+        plt.tight_layout()
+        plt.savefig("Images/S1_EC_pre_raw_signals.png", dpi=500)
+        plt.show()
+
     # Plot example process of filtering
-    plot_filter_process_example = False
+    plot_filter_process_example = True
 
     if plot_filter_process_example:
-        # -------------------------------> I HAVE TO CHANGE THIS SO I TAKE COMPLETELY ORIGINAL DATA
-        example_path = root + "Data/tDCS_EEG_data/Data_cleaned/S11/S11_post_EO.txt"
-        plot_example_process("S12_post_EC.txt", "S12", 0.5, 40)
+        plot_example_process("S1_pre_EC.txt", "S1", 0.5, 40)
+        plt.savefig("Images/S1_EC_pre_raw_to_filt.png", dpi=500)
         plt.show()
 
     plot_artifact_removal_example = False

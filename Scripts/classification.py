@@ -68,11 +68,14 @@ def plot_features_hist(feature_h, feature_d, bins, title):
     return fig
 
 
-def results_to_table(mean, std, pre, rec, f1, par, feat, file):
+def results_to_table(min, max, mean, pre, rec, f1, par, feat, file):
     # Read and fill in table
     res_df = pd.read_csv("Results/result_table_format.csv")
-    res_df["Mean accuracy"] = mean
-    res_df["Standard deviation"] = std
+    res_df["Min"] = min
+    res_df["Max"] = max
+    res_df["Mean"] = mean
+    # res_df["Mean accuracy"] = mean
+    # res_df["Standard deviation"] = std
     res_df["Precision"] = pre
     res_df["Recall"] = rec
     res_df["F1-score"] = f1
@@ -105,7 +108,7 @@ def CV_output(scores):
 
 if __name__ == "__main__":
     # Get feature matrix and target vector
-    current_feature_file = "all_pre_EC_116s"
+    current_feature_file = "all_pre_116s"  # "all_pre_EO_116s"
     with open(
         root + "Features_and_output/feature_df_" + current_feature_file + ".pickle",
         "rb",
@@ -158,7 +161,7 @@ if __name__ == "__main__":
     # However, paper also says that a larger number have shown notable success
 
     # Using MRMR (Minimum Redundancy - Maximum Relevance)
-    K = 8
+    K = 5
     selected_features = mrmr_classif(X=X, y=y, K=K)
 
     print("SELECTED FEATURES (", len(selected_features), "):")
@@ -222,6 +225,8 @@ if __name__ == "__main__":
     # logo = LeaveOneGroupOut()
 
     # Initiate lists for accumulating results
+    min_acc_vals = []
+    max_acc_vals = []
     mean_acc_vals = []
     std_vals = []
     precision_vals = []
@@ -247,8 +252,9 @@ if __name__ == "__main__":
         )
 
         # Get values for results table
+        min_acc_vals.append(round(scores["test_accuracy"].min(), 3))
+        max_acc_vals.append(round(scores["test_accuracy"].max(), 3))
         mean_acc_vals.append(round(scores["test_accuracy"].mean(), 3))
-        std_vals.append(round(scores["test_accuracy"].std(), 3))
         precision_vals.append(round(scores["test_precision"].mean(), 3))
         recall_vals.append(round(scores["test_recall"].mean(), 3))
         f1_score_vals.append(round(scores["test_f1"].mean(), 3))
@@ -265,11 +271,12 @@ if __name__ == "__main__":
         CV_output(scores)
 
     # Results into results table
-    save_results = False
+    save_results = True
     if save_results:
         results_to_table(
+            min_acc_vals,
+            max_acc_vals,
             mean_acc_vals,
-            std_vals,
             precision_vals,
             recall_vals,
             f1_score_vals,

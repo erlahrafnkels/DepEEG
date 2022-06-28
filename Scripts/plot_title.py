@@ -18,9 +18,9 @@ def make_plot_title(filename: str) -> str:
     else:
         h_or_d = "depressed"
     if pre_or_post == "pre":
-        pre_or_post = "Pre treatment"
+        pre_or_post = "Pre-treatment"
     else:
-        pre_or_post = "Post treatment"
+        pre_or_post = "Post-treatment"
     if open_or_closed == "EO":
         open_or_closed = "eyes open"
     else:
@@ -30,7 +30,7 @@ def make_plot_title(filename: str) -> str:
         pretext_and_subject
         + " ("
         + h_or_d
-        + "): "
+        + ") channel Fp1: "
         + pre_or_post
         + " recording with "
         + open_or_closed
