@@ -1,4 +1,6 @@
 import pickle
+import random
+import time
 import warnings
 from sys import platform
 
@@ -18,6 +20,7 @@ config = OmegaConf.load("config.yaml")
 samp_freq = config.sample_frequency
 healthy_num = config.subject_classes.healthy_num
 depressed_num = config.subject_classes.depressed_num
+all_electrodes = config.electrodes.all_electrodes_arranged
 frontal = config.electrodes.frontal
 temporal = config.electrodes.temporal
 parietal = config.electrodes.parietal
@@ -116,7 +119,7 @@ if __name__ == "__main__":
     # All feature names in one vector
     feature_names = moment_names + power_names
 
-    # ------------------------------------------------ VMD STUFF ------------------------------------------------
+    # ------------------------------------------------ VMD ------------------------------------------------
 
     """
     PAPER: Epilepsy seizure detection using kurtosis based VMD's parameters selection and bandwidth features
@@ -149,12 +152,107 @@ if __name__ == "__main__":
     with open(root + "Epochs/10_seconds" + "/all_pre_EC_10s_epochs.pickle", "rb") as f:
         df10 = pickle.load(f)
 
+    subjects = df10["Subject_ID"].unique()
+    epochs = df10["Epoch"].unique()
+    channels = df10.columns[:-3]
+
     # Step 3: Run VMD
     # Outputs:
     # u       - the collection of decomposed modes/BIMFs
     # u_hat   - spectra of the modes
     # omega   - estimated mode center-frequencies
 
+    # Track for healthy and depressed separately
+    max_kurt_h = 0
+    best_K_h = 0
+    best_alpha_h = 0
+    max_kurt_d = 0
+    best_K_d = 0
+    best_alpha_d = 0
+    i = 1
+
+    start_time = time.time()
+    for s in subjects:
+        c = random.sample(sorted(channels), 1)
+        e = random.sample(sorted(epochs), 1)
+        print(f"Subject {i}/{subjects.shape[0]}")
+        print("  Epoch", e)
+        print("    Channel", c)
+        sub_df = df10[(df10["Subject_ID"] == s) & (df10["Epoch"] == e)]
+        isDep = sub_df["Depressed"].max()
+        f = sub_df[c]
+        for k in K:
+            print("      K =", k)
+            for a in alpha:
+                u, _, _ = VMD(f, a, tau, k, DC, init, tol)
+                u_sum = u.sum(axis=0)
+                kurt = kurtosis(u_sum)
+                if (kurt > max_kurt_h) and (isDep == 0):
+                    max_kurt_h = kurt
+                    best_K_h = k
+                    best_alpha_h = a
+                elif (kurt > max_kurt_d) and (isDep == 1):
+                    max_kurt_d = kurt
+                    best_K_d = k
+                    best_alpha_d = a
+        print(f"Best healthy: {max_kurt_h}, {best_K_h}, {best_alpha_h}")
+        print(f"Best depressed: {max_kurt_d}, {best_K_d}, {best_alpha_d}")
+        current_time = time.time()
+        print("Timestamp:", current_time - start_time)
+        print()
+        i += 1
+
+    print("Maximum kurtosis obtained (h):", max_kurt_h)
+    print("Best K (h):", best_K_h)
+    print("Best alpha (h):", best_alpha_h)
+
+    print("Maximum kurtosis obtained (d):", max_kurt_d)
+    print("Best K (d):", best_K_d)
+    print("Best alpha (d):", best_alpha_d)
+
+    """ start_time = time.time()
+    for s in subjects:
+        random_electrodes = random.sample(sorted(channels), 2)
+        random_epochs = random.sample(sorted(epochs), 2)
+        print(f"Subject {i}/{subjects.shape[0]}")
+        for e in random_epochs:
+            print("  Epoch", e)
+            sub_df = df10[(df10["Subject_ID"] == s) & (df10["Epoch"] == e)]
+            f = sub_df[sub_df.columns.intersection(random_electrodes)]
+            isDep = sub_df["Depressed"].iloc[0]
+            for c in random_electrodes:
+                f = sub_df[c]
+                print("    Channel", c)
+                for k in K:
+                    print("      K =", k)
+                    for a in alpha:
+                        u, _, _ = VMD(f, a, tau, k, DC, init, tol)
+                        u_sum = u.sum(axis=0)
+                        kurt = kurtosis(u_sum)
+                        if (kurt > max_kurt_h) and (isDep == 0):
+                            max_kurt_h = kurt
+                            best_K_h = k
+                            best_alpha_h = a
+                        elif (kurt > max_kurt_d) and (isDep == 1):
+                            max_kurt_d = kurt
+                            best_K_d = k
+                            best_alpha_d = a
+        print(f"Best healthy: {max_kurt_h}, {best_K_h}, {best_alpha_h}")
+        print(f"Best depressed: {max_kurt_d}, {best_K_d}, {best_alpha_d}")
+        current_time = time.time()
+        print("Timestamp:", current_time - start_time)
+        print()
+        i += 1
+
+    print("Maximum kurtosis obtained (h):", max_kurt_h)
+    print("Best K (h):", best_K_h)
+    print("Best alpha (h):", best_alpha_h)
+
+    print("Maximum kurtosis obtained (d):", max_kurt_d)
+    print("Best K (d):", best_K_d)
+    print("Best alpha (d):", best_alpha_d) """
+
+    # VMD plot example
     subjects = df10["Subject_ID"].unique()
     epochs = df10["Epoch"].unique()
     channels = df10.columns[:-3]
