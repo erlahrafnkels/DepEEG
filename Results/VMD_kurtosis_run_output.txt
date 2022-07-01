@@ -1,0 +1,621 @@
+Subject 1/41
+  Epoch 1
+    Channel F3-A1
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 0.6431977186259532, 1, 9900
+Best depressed: 0, 0, 0
+Timestamp: 660.0723617076874
+
+Subject 2/41
+  Epoch 5
+    Channel Fp2-A2
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 0.6431977186259532, 1, 9900
+Best depressed: 1.0719459846443113, 1, 9900
+Timestamp: 1088.2624299526215
+
+Subject 3/41
+  Epoch 13
+    Channel FT7-A1
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 0.6431977186259532, 1, 9900
+Best depressed: 1.0719459846443113, 1, 9900
+Timestamp: 1527.2344388961792
+
+Subject 4/41
+  Epoch 13
+    Channel CP3-A1
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 0.6431977186259532, 1, 9900
+Best depressed: 1.0719459846443113, 1, 9900
+Timestamp: 2013.0248260498047
+
+Subject 5/41
+  Epoch 11
+    Channel T6-A2
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 0.6431977186259532, 1, 9900
+Best depressed: 1.0719459846443113, 1, 9900
+Timestamp: 2629.068165540695
+
+Subject 6/41
+  Epoch 13
+    Channel T5-A1
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 0.6431977186259532, 1, 9900
+Best depressed: 1.0719459846443113, 1, 9900
+Timestamp: 3196.1003453731537
+
+Subject 7/41
+  Epoch 4
+    Channel O2-A2
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 0.6431977186259532, 1, 9900
+Best depressed: 1.0719459846443113, 1, 9900
+Timestamp: 3747.8550708293915
+
+Subject 8/41
+  Epoch 16
+    Channel CP4-A2
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 0.6431977186259532, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 4375.272287130356
+
+Subject 9/41
+  Epoch 0
+    Channel Fpz-A1
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 4988.229074478149
+
+Subject 10/41
+  Epoch 19
+    Channel Fp1-A1
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 5575.501744508743
+
+Subject 11/41
+  Epoch 20
+    Channel FC4-A2
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 6063.35454750061
+
+Subject 12/41
+  Epoch 12
+    Channel F4-A2
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 6644.999056100845
+
+Subject 13/41
+  Epoch 18
+    Channel F4-A2
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 7203.523437738419
+
+Subject 14/41
+  Epoch 5
+    Channel TP8-A2
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 7817.950896263123
+
+Subject 15/41
+  Epoch 1
+    Channel F8-A2
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 8212.91934466362
+
+Subject 16/41
+  Epoch 9
+    Channel T6-A2
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 8614.88177371025
+
+Subject 17/41
+  Epoch 15
+    Channel F4-A2
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 9155.272924423218
+
+Subject 18/41
+  Epoch 4
+    Channel TP7-A1
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 9575.882693767548
+
+Subject 19/41
+  Epoch 0
+    Channel CP3-A1
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 10137.865194559097
+
+Subject 20/41
+  Epoch 6
+    Channel C4-A2
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 10618.258047103882
+
+Subject 21/41
+  Epoch 15
+    Channel Fp2-A2
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 11263.272014379501
+
+Subject 22/41
+  Epoch 15
+    Channel O1-A1
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 11880.584744215012
+
+Subject 23/41
+  Epoch 13
+    Channel Cz-A2
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 12414.898016929626
+
+Subject 24/41
+  Epoch 18
+    Channel FC3-A1
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 12844.021244764328
+
+Subject 25/41
+  Epoch 6
+    Channel Fpz-A1
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 13446.194131612778
+
+Subject 26/41
+  Epoch 13
+    Channel O1-A1
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 13935.83089184761
+
+Subject 27/41
+  Epoch 11
+    Channel FC4-A2
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 14510.822840690613
+
+Subject 28/41
+  Epoch 9
+    Channel FT7-A1
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 15037.954357147217
+
+Subject 29/41
+  Epoch 2
+    Channel Pz-A2
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 15630.42019367218
+
+Subject 30/41
+  Epoch 12
+    Channel O2-A2
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 16196.148999929428
+
+Subject 31/41
+  Epoch 13
+    Channel Fpz-A1
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 16766.184875249863
+
+Subject 32/41
+  Epoch 20
+    Channel C3-A1
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 17391.18045115471
+
+Subject 33/41
+  Epoch 2
+    Channel Fpz-A1
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 17873.5835852623
+
+Subject 34/41
+  Epoch 17
+    Channel P4-A2
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 18363.48953652382
+
+Subject 35/41
+  Epoch 17
+    Channel Oz-A2
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 18844.11701774597
+
+Subject 36/41
+  Epoch 5
+    Channel TP7-A1
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 19408.11727452278
+
+Subject 37/41
+  Epoch 4
+    Channel T4-A2
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 19833.352217674255
+
+Subject 38/41
+  Epoch 15
+    Channel P4-A2
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 20413.83733677864
+
+Subject 39/41
+  Epoch 3
+    Channel O2-A2
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 2.516844167251385, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 21016.38835144043
+
+Subject 40/41
+  Epoch 6
+    Channel Fz-A1
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 7.144688449561285, 1, 9900
+Best depressed: 1.4163000498752885, 1, 9900
+Timestamp: 21633.83347415924
+
+Subject 41/41
+  Epoch 18
+    Channel FT7-A1
+      K = 1
+      K = 2
+      K = 3
+      K = 4
+      K = 5
+      K = 6
+      K = 7
+      K = 8
+Best healthy: 7.144688449561285, 1, 9900
+Best depressed: 6.26940634892013, 1, 9900
+Timestamp: 21999.52185153961
+
+Maximum kurtosis obtained (h): 7.144688449561285
+Best K (h): 1
+Best alpha (h): 9900
+Maximum kurtosis obtained (d): 6.26940634892013
+Best K (d): 1
+Best alpha (d): 9900

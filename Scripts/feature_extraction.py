@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import yasa
+from dit.other import renyi_entropy
 from omegaconf import OmegaConf
 from scipy.stats import kurtosis, skew, zscore
 from vmdpy import VMD
@@ -121,27 +122,9 @@ if __name__ == "__main__":
 
     # ------------------------------------------------ VMD ------------------------------------------------
 
-    """
-    PAPER: Epilepsy seizure detection using kurtosis based VMD's parameters selection and bandwidth features
-    AUTHORS: Sukriti, Monisha Chakraborty, Debjani Mitra
-
-    The proposed methodology is described as follows:
-
-    Step 1: A range of K and alpha is set such that K = 1-15 with an interval of 1 and
-            alpha = 100-15000 with an interval of 100.
-    Step 2: A new signal is formulated such that it consists of 10 s of EEG segments from each of the datasets
-            Z, F and S.
-    Step 3: The new signal is decomposed by VMD for all possible combinations of K and alpha to obtain K BIMFs.
-    Step 4: The BIMFs are then summed up to obtain the reconstruction signal for each decomposition.
-    Step 5: Kurtosis of each reconstructed signal is determined.
-    Step 6: The value of K and alpha for which kurtosis is maximum is recorded.
-    Step 7: Lastly, the five sets of EEG data (Z, O, N, F and S) are decomposed into BIMFs by VMD under the
-            recorded value of K and alpha.
-    """
-
     # Step 1: Parameters for VMD proposed in the paper
-    K = np.arange(1, 16, 1)  # Number of decomposed nodes
-    alpha = np.arange(100, 15100, 100)  # Data-fidelity constraint parameter
+    K = np.arange(1, 15, 1)  # Number of decomposed nodes
+    alpha = 2000  # np.arange(100, 10000, 100)  # Data-fidelity constraint parameter
     tau = 0  # Time step of dual ascent
     DC = 0  # Number of DC components
     init = 1  # Value of initial frequency for the decomposed modes
@@ -162,98 +145,11 @@ if __name__ == "__main__":
     # u_hat   - spectra of the modes
     # omega   - estimated mode center-frequencies
 
-    # Track for healthy and depressed separately
-    max_kurt_h = 0
-    best_K_h = 0
-    best_alpha_h = 0
-    max_kurt_d = 0
-    best_K_d = 0
-    best_alpha_d = 0
-    i = 1
-
-    start_time = time.time()
-    for s in subjects:
-        c = random.sample(sorted(channels), 1)
-        e = random.sample(sorted(epochs), 1)
-        print(f"Subject {i}/{subjects.shape[0]}")
-        print("  Epoch", e)
-        print("    Channel", c)
-        sub_df = df10[(df10["Subject_ID"] == s) & (df10["Epoch"] == e)]
-        isDep = sub_df["Depressed"].max()
-        f = sub_df[c]
-        for k in K:
-            print("      K =", k)
-            for a in alpha:
-                u, _, _ = VMD(f, a, tau, k, DC, init, tol)
-                u_sum = u.sum(axis=0)
-                kurt = kurtosis(u_sum)
-                if (kurt > max_kurt_h) and (isDep == 0):
-                    max_kurt_h = kurt
-                    best_K_h = k
-                    best_alpha_h = a
-                elif (kurt > max_kurt_d) and (isDep == 1):
-                    max_kurt_d = kurt
-                    best_K_d = k
-                    best_alpha_d = a
-        print(f"Best healthy: {max_kurt_h}, {best_K_h}, {best_alpha_h}")
-        print(f"Best depressed: {max_kurt_d}, {best_K_d}, {best_alpha_d}")
-        current_time = time.time()
-        print("Timestamp:", current_time - start_time)
-        print()
-        i += 1
-
-    print("Maximum kurtosis obtained (h):", max_kurt_h)
-    print("Best K (h):", best_K_h)
-    print("Best alpha (h):", best_alpha_h)
-
-    print("Maximum kurtosis obtained (d):", max_kurt_d)
-    print("Best K (d):", best_K_d)
-    print("Best alpha (d):", best_alpha_d)
-
-    """ start_time = time.time()
-    for s in subjects:
-        random_electrodes = random.sample(sorted(channels), 2)
-        random_epochs = random.sample(sorted(epochs), 2)
-        print(f"Subject {i}/{subjects.shape[0]}")
-        for e in random_epochs:
-            print("  Epoch", e)
-            sub_df = df10[(df10["Subject_ID"] == s) & (df10["Epoch"] == e)]
-            f = sub_df[sub_df.columns.intersection(random_electrodes)]
-            isDep = sub_df["Depressed"].iloc[0]
-            for c in random_electrodes:
-                f = sub_df[c]
-                print("    Channel", c)
-                for k in K:
-                    print("      K =", k)
-                    for a in alpha:
-                        u, _, _ = VMD(f, a, tau, k, DC, init, tol)
-                        u_sum = u.sum(axis=0)
-                        kurt = kurtosis(u_sum)
-                        if (kurt > max_kurt_h) and (isDep == 0):
-                            max_kurt_h = kurt
-                            best_K_h = k
-                            best_alpha_h = a
-                        elif (kurt > max_kurt_d) and (isDep == 1):
-                            max_kurt_d = kurt
-                            best_K_d = k
-                            best_alpha_d = a
-        print(f"Best healthy: {max_kurt_h}, {best_K_h}, {best_alpha_h}")
-        print(f"Best depressed: {max_kurt_d}, {best_K_d}, {best_alpha_d}")
-        current_time = time.time()
-        print("Timestamp:", current_time - start_time)
-        print()
-        i += 1
-
-    print("Maximum kurtosis obtained (h):", max_kurt_h)
-    print("Best K (h):", best_K_h)
-    print("Best alpha (h):", best_alpha_h)
-
-    print("Maximum kurtosis obtained (d):", max_kurt_d)
-    print("Best K (d):", best_K_d)
-    print("Best alpha (d):", best_alpha_d) """
+    # Find K using Renyi's entropy criterion from Sada's paper
+    renyi_entropy(dist, order, rvs=None, rv_mode=None)
 
     # VMD plot example
-    subjects = df10["Subject_ID"].unique()
+    """ subjects = df10["Subject_ID"].unique()
     epochs = df10["Epoch"].unique()
     channels = df10.columns[:-3]
 
@@ -280,7 +176,7 @@ if __name__ == "__main__":
         plt.xticks([])
         plt.yticks([])
     plt.subplots_adjust(wspace=0, hspace=0)
-    plt.show()
+    plt.show() """
 
     # ------------------------------------------------ FEATURE CALCULATIONS ------------------------------------------
 
@@ -379,35 +275,134 @@ if __name__ == "__main__":
         print("Feature matrix saved.")
 
     """
-    max_kurt = 0
-    best_K = 0
-    best_alpha = 0
+    PAPER: Epilepsy seizure detection using kurtosis based VMD's parameters selection and bandwidth features
+    AUTHORS: Sukriti, Monisha Chakraborty, Debjani Mitra
+
+    The proposed methodology is described as follows:
+
+    Step 1: A range of K and alpha is set such that K = 1-15 with an interval of 1 and
+            alpha = 100-15000 with an interval of 100.
+    Step 2: A new signal is formulated such that it consists of 10 s of EEG segments from each of the datasets
+            Z, F and S.
+    Step 3: The new signal is decomposed by VMD for all possible combinations of K and alpha to obtain K BIMFs.
+    Step 4: The BIMFs are then summed up to obtain the reconstruction signal for each decomposition.
+    Step 5: Kurtosis of each reconstructed signal is determined.
+    Step 6: The value of K and alpha for which kurtosis is maximum is recorded.
+    Step 7: Lastly, the five sets of EEG data (Z, O, N, F and S) are decomposed into BIMFs by VMD under the
+            recorded value of K and alpha.
+
+    # Step 1: Parameters for VMD proposed in the paper
+    K = np.arange(1, 9, 1)  # Number of decomposed nodes
+    alpha = np.arange(100, 10000, 100)  # Data-fidelity constraint parameter
+    tau = 0  # Time step of dual ascent
+    DC = 0  # Number of DC components
+    init = 1  # Value of initial frequency for the decomposed modes
+    tol = 1e-6  # Tolerance value for convergence criteria
+
+    # Step 2: Split data into 10-second epochs
+    # make_epochs(all_pre_EC_116s, 10, 0.5)  # --> Already done, comment out
+    with open(root + "Epochs/10_seconds" + "/all_pre_EC_10s_epochs.pickle", "rb") as f:
+        df10 = pickle.load(f)
+
+    subjects = df10["Subject_ID"].unique()
+    epochs = df10["Epoch"].unique()
+    channels = df10.columns[:-3]
+
+    # Step 3: Run VMD
+    # Outputs:
+    # u       - the collection of decomposed modes/BIMFs
+    # u_hat   - spectra of the modes
+    # omega   - estimated mode center-frequencies
+
+    # Track for healthy and depressed separately
+    max_kurt_h = 0
+    best_K_h = 0
+    best_alpha_h = 0
+    max_kurt_d = 0
+    best_K_d = 0
+    best_alpha_d = 0
     i = 1
 
+    start_time = time.time()
     for s in subjects:
+        c = random.sample(sorted(channels), 1)[0]
+        e = int(random.sample(sorted(epochs), 1)[0])
         print(f"Subject {i}/{subjects.shape[0]}")
-        for e in epochs:
-            print("  Epoch ", e)
-            sub_df = df10[(df10["Subject_ID"] == s) & (df10["Epoch"] == e)]
-            f = sub_df["Fp1-A1"]
-            # for c in channels:
-            #     sub_df = df10[(df10["Subject_ID"] == s) & (df10["Epoch"] == e)]
-            #     f = sub_df[c]
-            #     print("    Channel ", c)
-            for k in K:
-                for a in alpha:
-                    u, _, _ = VMD(f, a, tau, k, DC, init, tol)
-                    u_sum = u.sum(axis=0)
-                    kurt = kurtosis(u_sum)
-                    if kurt > max_kurt:
-                        max_kurt = kurt
-                        best_K = k
-                        best_alpha = a
+        print("  Epoch", e)
+        print("    Channel", c)
+        sub_df = df10[(df10["Subject_ID"] == s) & (df10["Epoch"] == e)]
+        isDep = sub_df["Depressed"].max()
+        f = sub_df[c]
+        for k in K:
+            print("      K =", k)
+            for a in alpha:
+                u, _, _ = VMD(f, a, tau, k, DC, init, tol)
+                u_sum = u.sum(axis=0)
+                kurt = kurtosis(u_sum)
+                if (kurt > max_kurt_h) and (isDep == 0):
+                    max_kurt_h = kurt
+                    best_K_h = k
+                    best_alpha_h = a
+                elif (kurt > max_kurt_d) and (isDep == 1):
+                    max_kurt_d = kurt
+                    best_K_d = k
+                    best_alpha_d = a
+        print(f"Best healthy: {max_kurt_h}, {best_K_h}, {best_alpha_h}")
+        print(f"Best depressed: {max_kurt_d}, {best_K_d}, {best_alpha_d}")
+        current_time = time.time()
+        print("Timestamp:", current_time - start_time)
+        print()
         i += 1
 
-    print("Maximum kurtosis obtained:", max_kurt)
-    print("Best K:", best_K)
-    print("Best alpha:", best_alpha)
+    print("Maximum kurtosis obtained (h):", max_kurt_h)
+    print("Best K (h):", best_K_h)
+    print("Best alpha (h):", best_alpha_h)
+
+    print("Maximum kurtosis obtained (d):", max_kurt_d)
+    print("Best K (d):", best_K_d)
+    print("Best alpha (d):", best_alpha_d)
+
+    start_time = time.time()
+    for s in subjects:
+        random_electrodes = random.sample(sorted(channels), 2)
+        random_epochs = random.sample(sorted(epochs), 2)
+        print(f"Subject {i}/{subjects.shape[0]}")
+        for e in random_epochs:
+            print("  Epoch", e)
+            sub_df = df10[(df10["Subject_ID"] == s) & (df10["Epoch"] == e)]
+            f = sub_df[sub_df.columns.intersection(random_electrodes)]
+            isDep = sub_df["Depressed"].iloc[0]
+            for c in random_electrodes:
+                f = sub_df[c]
+                print("    Channel", c)
+                for k in K:
+                    print("      K =", k)
+                    for a in alpha:
+                        u, _, _ = VMD(f, a, tau, k, DC, init, tol)
+                        u_sum = u.sum(axis=0)
+                        kurt = kurtosis(u_sum)
+                        if (kurt > max_kurt_h) and (isDep == 0):
+                            max_kurt_h = kurt
+                            best_K_h = k
+                            best_alpha_h = a
+                        elif (kurt > max_kurt_d) and (isDep == 1):
+                            max_kurt_d = kurt
+                            best_K_d = k
+                            best_alpha_d = a
+        print(f"Best healthy: {max_kurt_h}, {best_K_h}, {best_alpha_h}")
+        print(f"Best depressed: {max_kurt_d}, {best_K_d}, {best_alpha_d}")
+        current_time = time.time()
+        print("Timestamp:", current_time - start_time)
+        print()
+        i += 1
+
+    print("Maximum kurtosis obtained (h):", max_kurt_h)
+    print("Best K (h):", best_K_h)
+    print("Best alpha (h):", best_alpha_h)
+
+    print("Maximum kurtosis obtained (d):", max_kurt_d)
+    print("Best K (d):", best_K_d)
+    print("Best alpha (d):", best_alpha_d)
 
     # ------------------------------------------------ PLOTTING ------------------------------------------------
 
@@ -459,5 +454,4 @@ if __name__ == "__main__":
 
     plt.suptitle("Eyes open pre-treatment data features", fontsize="x-large")
 
-    plt.show()
-    """
+    plt.show() """
