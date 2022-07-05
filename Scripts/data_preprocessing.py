@@ -39,6 +39,7 @@ new_data = config.new_data
 healthy = config.subject_classes.healthy
 depressed_active = config.subject_classes.depressed_active
 depressed_sham = config.subject_classes.depressed_sham
+remove_recs = config.noisy_recs
 
 # DTU colors for plots
 color_codes = [c[1] for c in config.colors.items()]
@@ -298,10 +299,14 @@ def remove_artifacts(record, ica_comps, ica_mixing, comp_ids):
     return updated_comps, updated_rec
 
 
-def cut_record_116s(record):
-    # Cut off first 4 seconds and cut off after 120 seconds
+def cut_record(record):
+    # Cut off first 4 seconds
     begin = 4 * samp_freq
-    end = 120 * samp_freq
+
+    # And then off the end
+    # Shortest rec which won't be thrown out is 56960 datapoints (after removing first 4 s)
+    # Found after examination of dataframe shapes
+    end = 56960
 
     # Update
     record.drop(record.index[0:begin], inplace=True)
@@ -510,22 +515,21 @@ if __name__ == "__main__":
 
         print("All artifact removals finished and saved.")
 
-    # Cut the beginning and end of the recordings
-    # We cut off the first 4 seconds and then after 120 seconds
-    if not os.listdir(root + "Data/tDCS_EEG_data/Epochs/116_seconds/"):
+    # Cut the beginning and end of the recordings so all are the same length
+    if not os.listdir(root + "Data/tDCS_EEG_data/Epochs/Whole_rec/"):
         data_path = root + "Data/tDCS_EEG_data/Data_ready/"
         files = os.listdir(data_path)
         print("Performing time-cutoffs")
         i = 0
         for file in files:
             record = pd.read_csv(data_path + file, sep="\t", index_col=False)
-            rec_cut_116s = cut_record_116s(record)
+            rec_cut = cut_record(record)
 
             # Drop the T3 channel so it doesn't cause trouble later (is incorrectly referenced)
-            if "T3-A1" in rec_cut_116s.columns:
-                rec_cut_116s.drop(columns=["T3-A1"], inplace=True)
+            if "T3-A1" in rec_cut.columns:
+                rec_cut.drop(columns=["T3-A1"], inplace=True)
             else:
-                rec_cut_116s.drop(columns=["T3-A2"], inplace=True)
+                rec_cut.drop(columns=["T3-A2"], inplace=True)
 
             # Form filename
             name_split = file[:-4].split("_")
@@ -540,11 +544,11 @@ if __name__ == "__main__":
                 h_or_d = "DepSham_"
 
             # rec_cut_116s = pd.to_numeric(rec_cut_116s)
-            rec_cut_116s.to_csv(
-                "Data/tDCS_EEG_data/Epochs/116_seconds/"
+            rec_cut.to_csv(
+                "Data/tDCS_EEG_data/Epochs/Whole_rec/"
                 + file[:-9]
                 + h_or_d
-                + "116s.txt",
+                + "2min.txt",
                 sep="\t",
                 index=False,
             )

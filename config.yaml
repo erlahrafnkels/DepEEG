@@ -104,19 +104,20 @@ subject_classes:
   ]
 
 # Noisy records which should be removed and not used
+# S51_post_EC_DepActive_2min.txt removed because it is much shorter than all others (only 100 s after cutting)
 noisy_recs: [
-    "S1_pre_EC_DepActive_116s.txt", "S8_post_EC_DepActive_116s.txt", "S9_post_EC_Healthy_116s.txt",
-    "S9_pre_EC_Healthy_116s.txt", "S9_pre_EO_Healthy_116s.txt", "S15_pre_EC_Healthy_116s.txt",
-    "S15_pre_EO_Healthy_116s.txt", "S24_pre_EO_Healthy_116s.txt", "S29_post_EC_Healthy_116s.txt",
-    "S29_post_EO_Healthy_116s.txt", "S33_post_EC_DepSham_116s.txt", "S35_pre_EO_DepSham_116s.txt",
-    "S35_pre_EC_DepSham_116s.txt", "S35_post_EO_DepSham_116s.txt", "S35_post_EC_DepSham_116s.txt",
-    "S37_pre_EO_DepSham_116s.txt", "S37_pre_EC_DepSham_116s.txt", "S39_post_EC_Healthy_116s.txt",
-    "S39_post_EO_Healthy_116s.txt", "S39_pre_EC_Healthy_116s.txt", "S40_post_EC_DepSham_116s.txt",
-    "S40_post_EO_DepSham_116s.txt", "S40_pre_EC_DepSham_116s.txt", "S41_post_EC_DepSham_116s.txt",
-    "S41_post_EO_DepSham_116s.txt", "S41_pre_EC_DepSham_116s.txt", "S42_post_EC_Healthy_116s.txt",
-    "S42_pre_EO_Healthy_116s.txt", "S42_pre_EC_Healthy_116s.txt", "S44_post_EC_DepSham_116s.txt",
-    "S44_post_EO_DepSham_116s.txt", "S45_pre_EC_DepSham_116s.txt", "S45_pre_EO_DepSham_116s.txt",
-    "S45_post_EC_DepSham_116s.txt", "S45_post_EO_DepSham_116s.txt", "S46_post_EO_Healthy_116s.txt",
-    "S46_pre_EO_Healthy_116s.txt", "S46_pre_EC_Healthy_116s.txt", "S47_pre_EO_Healthy_116s.txt",
-    "S47_pre_EC_Healthy_116s.txt", "S52_pre_EC_DepActive_116s.txt"
+    "S1_pre_EC_DepActive_2min.txt", "S8_post_EC_DepActive_2min.txt", "S9_post_EC_Healthy_2min.txt",
+    "S9_pre_EC_Healthy_2min.txt", "S9_pre_EO_Healthy_2min.txt", "S15_pre_EC_Healthy_2min.txt",
+    "S15_pre_EO_Healthy_2min.txt", "S24_pre_EO_Healthy_2min.txt", "S29_post_EC_Healthy_2min.txt",
+    "S29_post_EO_Healthy_2min.txt", "S33_post_EC_DepSham_2min.txt", "S35_pre_EO_DepSham_2min.txt",
+    "S35_pre_EC_DepSham_2min.txt", "S35_post_EO_DepSham_2min.txt", "S35_post_EC_DepSham_2min.txt",
+    "S37_pre_EO_DepSham_2min.txt", "S37_pre_EC_DepSham_2min.txt", "S39_post_EC_Healthy_2min.txt",
+    "S39_post_EO_Healthy_2min.txt", "S39_pre_EC_Healthy_2min.txt", "S40_post_EC_DepSham_2min.txt",
+    "S40_post_EO_DepSham_2min.txt", "S40_pre_EC_DepSham_2min.txt", "S41_post_EC_DepSham_2min.txt",
+    "S41_post_EO_DepSham_2min.txt", "S41_pre_EC_DepSham_2min.txt", "S42_post_EC_Healthy_2min.txt",
+    "S42_pre_EO_Healthy_2min.txt", "S42_pre_EC_Healthy_2min.txt", "S44_post_EC_DepSham_2min.txt",
+    "S44_post_EO_DepSham_2min.txt", "S45_pre_EC_DepSham_2min.txt", "S45_pre_EO_DepSham_2min.txt",
+    "S45_post_EC_DepSham_2min.txt", "S45_post_EO_DepSham_2min.txt", "S46_post_EO_Healthy_2min.txt",
+    "S46_pre_EO_Healthy_2min.txt", "S46_pre_EC_Healthy_2min.txt", "S47_pre_EO_Healthy_2min.txt",
+    "S47_pre_EC_Healthy_2min.txt", "S51_post_EC_DepActive_2min.txt", "S52_pre_EC_DepActive_2min.txt"
 ]

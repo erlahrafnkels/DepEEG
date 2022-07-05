@@ -1,14 +1,15 @@
+import os
 import pickle
-import random
+# import random
 import time
 import warnings
 from sys import platform
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import yasa
-from dit.other import renyi_entropy
+# from dit.other import renyi_entropy
 from omegaconf import OmegaConf
 from scipy.stats import kurtosis, skew, zscore
 from vmdpy import VMD
@@ -35,8 +36,8 @@ if platform == "darwin":
     root = "/Users/erlahrafnkelsdottir/Documents/DepEEG/" + root
 
 
-def make_epochs(df, seconds, overlap):
-    # Input df: Table with all 116s for pre/post and EO/EC
+def make_epochs_overlap(df, seconds, overlap):
+    # Input df: Table with all 2min for pre/post and EO/EC
     subjects = df["Subject_ID"].unique()
     step = int(seconds * overlap)
     end = int(
@@ -61,16 +62,52 @@ def make_epochs(df, seconds, overlap):
         s += 1
 
     # Save table as .pickle file
+    with open(
+        root + "Epochs/10_seconds" + "/all_pre_EC_10s_epochs_overlap.pickle", "wb"
+    ) as f:
+        pickle.dump(all_pre_EC_10s_epochs, f)
+
+    return
+
+
+def make_epochs(df, seconds):
+    # Input df: Table with all 2min for pre/post and EO/EC
+    subjects = df["Subject_ID"].unique()
+    step = seconds
+    end = int((56960 // samp_freq // seconds) * seconds + step)
+    cuts = np.arange(0, end * samp_freq, step * samp_freq)
+    all_pre_EC_10s_epochs = pd.DataFrame(columns=df.columns)
+    all_pre_EC_10s_epochs["Epoch"] = None
+
+    s = 1
+    for subject in subjects:
+        current_sub = df[df["Subject_ID"] == subject]
+        epoch = 0
+        print(f"Making epochs for subject {s}/{subjects.shape[0]}")
+        for i in range(len(cuts[:-1])):
+            start = cuts[i]
+            end = cuts[i + 1]
+            current_epoch = current_sub.iloc[start:end, :]
+            current_epoch["Epoch"] = epoch
+            all_pre_EC_10s_epochs = all_pre_EC_10s_epochs.append(current_epoch)
+            epoch += 1
+        s += 1
+
+    # Save table as .pickle file
     with open(root + "Epochs/10_seconds" + "/all_pre_EC_10s_epochs.pickle", "wb") as f:
         pickle.dump(all_pre_EC_10s_epochs, f)
 
     return
 
 
+def spectral_centroid():
+    return
+
+
 if __name__ == "__main__":
     # Load the data from a pickle file
-    current_data_file = "all_pre_EC_116s"
-    with open(root + "Epochs/116_seconds/" + current_data_file + ".pickle", "rb") as f:
+    current_data_file = "all_pre_EC_2min"
+    with open(root + "Epochs/Whole_rec/" + current_data_file + ".pickle", "rb") as f:
         current_dataset = pickle.load(f)
 
     # ------------------------------------------------ FEATURES SETUP ------------------------------------------------
@@ -117,36 +154,141 @@ if __name__ == "__main__":
         regional_pow_names.append(tot_name)
     power_names = power_names + total_pow_names + regional_pow_names
 
-    # All feature names in one vector
+    # All feature names (not from VMD) in one vector
     feature_names = moment_names + power_names
+
+    # BIMFs from VMD
+    BIMF_names = []
+    BIMFs_str = ["BIMF1-", "BIMF2-", "BIMF3-", "BIMF4-", "BIMF5-"]
+    for c in channel_names:
+        for b in BIMFs_str:
+            BIMF_names.append(b + c)
+    BIMF_names = BIMF_names + ["Subject_ID", "Depressed", "Epoch"]
+
+    # Features from BIMFs
+    AM_names = ["AM-" + chan for chan in channel_names]
+    FM_names = ["FM-" + chan for chan in channel_names]
+    C_names = ["C-" + chan for chan in channel_names]
+    sigma2_names = ["sigma2-" + chan for chan in channel_names]
+    beta_names = ["beta-" + chan for chan in channel_names]
+
+    # Features from BIMFs table names
+    BIMF_feature_names = (
+        AM_names
+        + FM_names
+        + C_names
+        + sigma2_names
+        + beta_names
+        + ["Subject_ID", "Depressed", "Epoch", "BIMF"]
+    )
 
     # ------------------------------------------------ VMD ------------------------------------------------
 
-    # Step 1: Parameters for VMD proposed in the paper
-    K = np.arange(1, 15, 1)  # Number of decomposed nodes
-    alpha = 2000  # np.arange(100, 10000, 100)  # Data-fidelity constraint parameter
+    # Parameters for VMD proposed in epilepsy paper
+    K = 5  # np.arange(1, 15, 1)  # Number of decomposed nodes
+    alpha = (
+        9800  # 2000  # np.arange(100, 10000, 100)  # Data-fidelity constraint parameter
+    )
     tau = 0  # Time step of dual ascent
     DC = 0  # Number of DC components
     init = 1  # Value of initial frequency for the decomposed modes
     tol = 1e-6  # Tolerance value for convergence criteria
 
-    # Step 2: Split data into 10-second epochs
-    # make_epochs(all_pre_EC_116s, 10, 0.5)  # --> Already done, comment out
+    # Split data into 10-second epochs
+    # Check whether we have already made and saved the combined data files
+    check_file = root + "Epochs/10_seconds/all_pre_EC_10s_epochs.pickle"
+    if not os.path.exists(check_file):
+        make_epochs(current_dataset, 10)
     with open(root + "Epochs/10_seconds" + "/all_pre_EC_10s_epochs.pickle", "rb") as f:
         df10 = pickle.load(f)
 
+    # Remove reference electrodes from column names
+    df10.columns = df10.columns.str.replace("-A1", "")
+    df10.columns = df10.columns.str.replace("-A2", "")
+
+    # Fetch IDs
     subjects = df10["Subject_ID"].unique()
     epochs = df10["Epoch"].unique()
     channels = df10.columns[:-3]
 
-    # Step 3: Run VMD
+    # BIMF_mat = []
+    rows = df10.shape[0]
+    cols = len(channel_names) * K + 3
+    BIMF_mat = []  # np.zeros(shape=(rows,cols))
+    BIMF_targets = []
+    BIMF_df = pd.DataFrame(columns=BIMF_names)
+
+    # Run VMD and get BIMFs
     # Outputs:
     # u       - the collection of decomposed modes/BIMFs
     # u_hat   - spectra of the modes
     # omega   - estimated mode center-frequencies
 
-    # Find K using Renyi's entropy criterion from Sada's paper
-    renyi_entropy(dist, order, rvs=None, rv_mode=None)
+    i = 1
+    start_time = time.time()
+    for s in subjects:
+        print(f"--------------- SUBJECT {i}/{subjects.shape[0]} ---------------")
+        bimf_sub_df = pd.DataFrame()
+        for c in channels:
+            print("  Channel ", c)
+            for e in epochs:
+                print("    Epoch ", e)
+                sub_df = df10[(df10["Subject_ID"] == s) & (df10["Epoch"] == e)]
+                is_depressed = sub_df["Depressed"].iloc[0]
+                f = sub_df[c]
+                u, u_hat, omega = VMD(f, alpha, tau, K, DC, init, tol)
+                cols = ["BIMF1-", "BIMF2-", "BIMF3-", "BIMF4-", "BIMF5-"]
+                cols = [b + c for b in cols]
+                cols = cols + ["Epoch"]
+                print(cols)
+        current_time = time.time()
+        print("Timestamp:", current_time - start_time)
+        print()
+        i += 1
+
+    i = 1
+    start_time = time.time()
+    for s in subjects:
+        print(f"--------------- SUBJECT {i}/{subjects.shape[0]} ---------------")
+        for e in epochs:
+            print("  Epoch ", e)
+            sub_df = df10[(df10["Subject_ID"] == s) & (df10["Epoch"] == e)]
+            is_depressed = sub_df["Depressed"].iloc[0]
+            for c in channels:
+                print("    Channel ", c)
+                f = sub_df[c]
+                u, u_hat, omega = VMD(f, alpha, tau, K, DC, init, tol)
+                for bimf in u:
+                    BIMF_mat.append(bimf)
+                # sub_cols = [col for col in BIMF_df.columns if ("-" + c) in col]
+                # BIMF_df = BIMF_df.append({sub_cols[0]: pd.Series(u[0].T)}, ignore_index=True)
+                # BIMF_df = BIMF_df.append({sub_cols[1]: pd.Series(u[1].T)}, ignore_index=True)
+                # print(BIMF_df)
+                # print(sub_cols[0], pd.Series(u[0].T))
+                # print(sub_cols[1], pd.Series(u[1].T))
+                # BIMF_df = BIMF_df[sub_cols[0]].append(pd.Series(u[0].T), ignore_index=True)
+                # BIMF_df = BIMF_df[sub_cols[1]].append(pd.Series(u[1].T), ignore_index=True)
+                # BIMF_df = BIMF_df[sub_cols[2]].append(pd.Series(u[2].T), ignore_index=True)
+                # BIMF_df = BIMF_df[sub_cols[3]].append(pd.Series(u[3].T), ignore_index=True)
+                # BIMF_df = BIMF_df[sub_cols[4]].append(pd.Series(u[4].T), ignore_index=True)
+                # bimfs 1,2,3,4,5 for channel c
+                # np.append(BIMF_mat, u)
+                # BIMF_mat.append(u)
+                # print(BIMF_mat.shape)
+                # print(BIMF_df.shape)
+                BIMF_targets.append(np.repeat([s, is_depressed, e], 5, axis=0))
+                print(BIMF_targets)
+        current_time = time.time()
+        print("Timestamp:", current_time - start_time)
+        print()
+        i += 1
+
+    # Analytic representation of BIMFs
+    # Amplitude modulation bandwidth AM_Bω
+    # Frequency modulation bandwidth FM_Bω
+    # Spectral centroid C_sp
+    # Spectral variance σ2_sp
+    # Spectral skewness β_sp
 
     # VMD plot example
     """ subjects = df10["Subject_ID"].unique()
@@ -178,7 +320,7 @@ if __name__ == "__main__":
     plt.subplots_adjust(wspace=0, hspace=0)
     plt.show() """
 
-    # ------------------------------------------------ FEATURE CALCULATIONS ------------------------------------------
+    # ------------------------------------------- NON-VMD FEATURE CALCULATIONS -------------------------------------
 
     # Create empty lists for feature matrix
     feature_mat = []
@@ -275,6 +417,13 @@ if __name__ == "__main__":
         print("Feature matrix saved.")
 
     """
+    sub_df10 = df10[(df10["Subject_ID"] == 5) & (df10["Epoch"] == 5)]
+    f = sub_df10["Fp1-A1"].to_numpy()
+
+    # Find K using Renyi's entropy criterion from Sada's paper
+    # renyi = renyi_entropy(f, 2, rvs=None, rv_mode=None)
+    # print(renyi)
+
     PAPER: Epilepsy seizure detection using kurtosis based VMD's parameters selection and bandwidth features
     AUTHORS: Sukriti, Monisha Chakraborty, Debjani Mitra
 
