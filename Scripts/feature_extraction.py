@@ -5,7 +5,7 @@ import time
 import warnings
 from sys import platform
 
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import yasa
@@ -100,6 +100,56 @@ def make_epochs(df, seconds):
     return
 
 
+def calculate_BIMFs(df, subjects, channels, epochs, alpha, tau, K, DC, init, tol):
+    # Calculates BIMFs of each channel, per subject, per epoch
+    # Saves dataframe for each channel (with all BIMFs for all subjects and their epochs)
+    bimf_cols = ["BIMF1-", "BIMF2-", "BIMF3-", "BIMF4-", "BIMF5-"]
+
+    # Outputs from VMD function:
+    # u       - the collection of decomposed modes/BIMFs
+    # u_hat   - spectra of the modes
+    # omega   - estimated mode center-frequencies
+
+    # Start loop
+    i = 1
+    start_time = time.time()
+    for c in channels:
+        print(f"--------------- CHANNEL {c} ({i}/{channels.shape[0]}) ---------------")
+        chan_df = df[[c, "Subject_ID", "Epoch"]]
+        bimf_df_cols = [b + c for b in bimf_cols]
+        cols = bimf_df_cols + ["Subject_ID", "Epoch"]
+        bimf_df = pd.DataFrame(columns=cols)
+        for s in subjects:
+            print("  Subject", s)
+            sub_df = chan_df[chan_df["Subject_ID"] == s]
+            for e in epochs:
+                print("    Epoch ", e)
+                epoch_df = sub_df[sub_df["Epoch"] == e]
+                f = epoch_df[c]
+                u, _, _ = VMD(f, alpha, tau, K, DC, init, tol)
+                su = np.ones(u.shape[1]) * s
+                ep = np.ones(u.shape[1]) * e
+                app = u.T
+                app = np.c_[app, su]
+                app = np.c_[app, ep]
+                bimf_df = bimf_df.append(
+                    pd.DataFrame(app, columns=cols), ignore_index=True
+                )
+        # Save as .pickle
+        path = (
+            root + "Epochs/10_seconds/BIMFs/" + current_data_file[:-4] + c + ".pickle"
+        )
+        with open(path, "wb") as f:
+            pickle.dump(bimf_df, f)
+        print(f"BIMFs of channel {c} saved!")
+        current_time = time.time()
+        print("Timestamp:", current_time - start_time, "seconds")
+        print()
+        i += 1
+
+    return
+
+
 def spectral_centroid():
     return
 
@@ -157,14 +207,6 @@ if __name__ == "__main__":
     # All feature names (not from VMD) in one vector
     feature_names = moment_names + power_names
 
-    # BIMFs from VMD
-    BIMF_names = []
-    BIMFs_str = ["BIMF1-", "BIMF2-", "BIMF3-", "BIMF4-", "BIMF5-"]
-    for c in channel_names:
-        for b in BIMFs_str:
-            BIMF_names.append(b + c)
-    BIMF_names = BIMF_names + ["Subject_ID", "Depressed", "Epoch"]
-
     # Features from BIMFs
     AM_names = ["AM-" + chan for chan in channel_names]
     FM_names = ["FM-" + chan for chan in channel_names]
@@ -185,10 +227,8 @@ if __name__ == "__main__":
     # ------------------------------------------------ VMD ------------------------------------------------
 
     # Parameters for VMD proposed in epilepsy paper
-    K = 5  # np.arange(1, 15, 1)  # Number of decomposed nodes
-    alpha = (
-        9800  # 2000  # np.arange(100, 10000, 100)  # Data-fidelity constraint parameter
-    )
+    K = 5  # Number of decomposed nodes
+    alpha = 9800  # Data-fidelity constraint parameter
     tau = 0  # Time step of dual ascent
     DC = 0  # Number of DC components
     init = 1  # Value of initial frequency for the decomposed modes
@@ -202,7 +242,7 @@ if __name__ == "__main__":
     with open(root + "Epochs/10_seconds" + "/all_pre_EC_10s_epochs.pickle", "rb") as f:
         df10 = pickle.load(f)
 
-    # Remove reference electrodes from column names
+    # Remove reference electrodes from column names (just to shorten)
     df10.columns = df10.columns.str.replace("-A1", "")
     df10.columns = df10.columns.str.replace("-A2", "")
 
@@ -211,77 +251,18 @@ if __name__ == "__main__":
     epochs = df10["Epoch"].unique()
     channels = df10.columns[:-3]
 
-    # BIMF_mat = []
-    rows = df10.shape[0]
-    cols = len(channel_names) * K + 3
-    BIMF_mat = []  # np.zeros(shape=(rows,cols))
-    BIMF_targets = []
-    BIMF_df = pd.DataFrame(columns=BIMF_names)
-
     # Run VMD and get BIMFs
-    # Outputs:
-    # u       - the collection of decomposed modes/BIMFs
-    # u_hat   - spectra of the modes
-    # omega   - estimated mode center-frequencies
+    # Check whether we have already run and saved the VMD
+    check_file = (
+        root + "Epochs/10_seconds/BIMFs/" + current_data_file[:-4] + "Fp1.pickle"
+    )
+    if not os.path.exists(check_file):
+        print("Calculating BIMFs")
+        calculate_BIMFs(df10, subjects, channels, epochs, alpha, tau, K, DC, init, tol)
 
-    i = 1
-    start_time = time.time()
-    for s in subjects:
-        print(f"--------------- SUBJECT {i}/{subjects.shape[0]} ---------------")
-        bimf_sub_df = pd.DataFrame()
-        for c in channels:
-            print("  Channel ", c)
-            for e in epochs:
-                print("    Epoch ", e)
-                sub_df = df10[(df10["Subject_ID"] == s) & (df10["Epoch"] == e)]
-                is_depressed = sub_df["Depressed"].iloc[0]
-                f = sub_df[c]
-                u, u_hat, omega = VMD(f, alpha, tau, K, DC, init, tol)
-                cols = ["BIMF1-", "BIMF2-", "BIMF3-", "BIMF4-", "BIMF5-"]
-                cols = [b + c for b in cols]
-                cols = cols + ["Epoch"]
-                print(cols)
-        current_time = time.time()
-        print("Timestamp:", current_time - start_time)
-        print()
-        i += 1
-
-    i = 1
-    start_time = time.time()
-    for s in subjects:
-        print(f"--------------- SUBJECT {i}/{subjects.shape[0]} ---------------")
-        for e in epochs:
-            print("  Epoch ", e)
-            sub_df = df10[(df10["Subject_ID"] == s) & (df10["Epoch"] == e)]
-            is_depressed = sub_df["Depressed"].iloc[0]
-            for c in channels:
-                print("    Channel ", c)
-                f = sub_df[c]
-                u, u_hat, omega = VMD(f, alpha, tau, K, DC, init, tol)
-                for bimf in u:
-                    BIMF_mat.append(bimf)
-                # sub_cols = [col for col in BIMF_df.columns if ("-" + c) in col]
-                # BIMF_df = BIMF_df.append({sub_cols[0]: pd.Series(u[0].T)}, ignore_index=True)
-                # BIMF_df = BIMF_df.append({sub_cols[1]: pd.Series(u[1].T)}, ignore_index=True)
-                # print(BIMF_df)
-                # print(sub_cols[0], pd.Series(u[0].T))
-                # print(sub_cols[1], pd.Series(u[1].T))
-                # BIMF_df = BIMF_df[sub_cols[0]].append(pd.Series(u[0].T), ignore_index=True)
-                # BIMF_df = BIMF_df[sub_cols[1]].append(pd.Series(u[1].T), ignore_index=True)
-                # BIMF_df = BIMF_df[sub_cols[2]].append(pd.Series(u[2].T), ignore_index=True)
-                # BIMF_df = BIMF_df[sub_cols[3]].append(pd.Series(u[3].T), ignore_index=True)
-                # BIMF_df = BIMF_df[sub_cols[4]].append(pd.Series(u[4].T), ignore_index=True)
-                # bimfs 1,2,3,4,5 for channel c
-                # np.append(BIMF_mat, u)
-                # BIMF_mat.append(u)
-                # print(BIMF_mat.shape)
-                # print(BIMF_df.shape)
-                BIMF_targets.append(np.repeat([s, is_depressed, e], 5, axis=0))
-                print(BIMF_targets)
-        current_time = time.time()
-        print("Timestamp:", current_time - start_time)
-        print()
-        i += 1
+    # Get BIMFs
+    with open(root + "Epochs/10_seconds/BIMFs/all_pre_EC_C3.pickle", "rb") as f:
+        bimfs_fp1 = pickle.load(f)
 
     # Analytic representation of BIMFs
     # Amplitude modulation bandwidth AM_Bω
@@ -291,34 +272,39 @@ if __name__ == "__main__":
     # Spectral skewness β_sp
 
     # VMD plot example
-    """ subjects = df10["Subject_ID"].unique()
-    epochs = df10["Epoch"].unique()
-    channels = df10.columns[:-3]
+    ex_sub = 60
+    ex_epo = 5
+    orig_sig = df10[(df10["Subject_ID"] == ex_sub) & (df10["Epoch"] == ex_epo)]
+    orig_sig = orig_sig["C3"]
+    one_bimf = bimfs_fp1[
+        (bimfs_fp1["Subject_ID"] == ex_sub) & (bimfs_fp1["Epoch"] == ex_epo)
+    ]
+    one_bimf = one_bimf[one_bimf.columns[0:5]]
 
-    sub_df10 = df10[(df10["Subject_ID"] == 5) & (df10["Epoch"] == 0)]
-    f = sub_df10["Fp1-A1"]
-
-    K = 9
-    alpha = 9800
-
-    u, _, _ = VMD(f, alpha, tau, K, DC, init, tol)
-    u_sum = u.sum(axis=0)
-    modes = len(u)
+    # Set up x-axis in time domain
+    points = one_bimf.shape[0]
+    x = np.linspace(0, points / samp_freq, points)
 
     # Visualize decomposed modes
     plt.figure(figsize=(8, 8))
     plt.subplot(K + 1, 1, 1)
-    plt.plot(f, color=color_codes[0])
+    plt.plot(x, orig_sig, color=color_codes[0])
     plt.xticks([])
     plt.yticks([])
-    plt.title("Original signal (red) and BIMFs (orange)")
+    plt.ylabel("C3 signal")
+    plt.title("Signal (red) and BIMFs (orange)")
     for m in range(K):
         plt.subplot(K + 1, 1, m + 2)
-        plt.plot(u[m].T, color=color_codes[6])
-        plt.xticks([])
+        plt.plot(x, one_bimf.iloc[:, m], color=color_codes[6])
+        plt.ylabel(f"BIMF{m+1}")
         plt.yticks([])
+        if m == K - 1:
+            plt.xticks(np.arange(11))
+            plt.xlabel("Time [s]")
+        else:
+            plt.xticks([])
     plt.subplots_adjust(wspace=0, hspace=0)
-    plt.show() """
+    plt.show()
 
     # ------------------------------------------- NON-VMD FEATURE CALCULATIONS -------------------------------------
 

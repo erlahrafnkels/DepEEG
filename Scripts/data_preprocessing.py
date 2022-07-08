@@ -213,9 +213,10 @@ def plot_example_process(filename, subject, low_freq, high_freq):
     ax5 = fig.add_subplot(gs[2, :])
 
     # Raw signal
-    ax1.plot(x, raw, color=config.colors.dtu_red)
+    ax1.plot(x, raw, color=config.colors.dtu_red, linewidth=0.75)
     ax1.set_title("Raw signal")
     ax1.set_xlabel("Time [s]")
+    ax1.set_ylabel("Amplitude [$\mu$V]")
     ax1.grid()
 
     # Notch filter
@@ -231,21 +232,24 @@ def plot_example_process(filename, subject, low_freq, high_freq):
     ax3.psd(signal_notched, Fs=samp_freq, color=config.colors.black)
     ax3.psd(signal_filtered, Fs=samp_freq, color=config.colors.blue)
     ax3.legend(labels=["Raw", "Notched", "Bandpass + notched"])
-    ax3.set_title("Power spectral density")
+    ax3.set_xlabel("Frequency [Hz]")
+    ax3.set_ylabel("PSD [dB/Hz]")
+    ax3.set_title("Power spectral density (PSD)")
 
     # Original signal with the filters
-    ax4.plot(x, signal_filtered, color=config.colors.dtu_red)
+    ax4.plot(x, signal_filtered, color=config.colors.dtu_red, linewidth=0.75)
     ax4.set_title("Data filtered between 0.5 and 40 Hz")
     ax4.set_xlabel("Time [s]")
+    ax4.set_ylabel("Amplitude [$\mu$V]")
     ax4.grid()
 
     # Original signal with the filters and normalized
-    ax5.plot(x, sf_norm, color=config.colors.dtu_red)
-    ax5.set_title("Data filtered and normalized")
+    ax5.plot(x, sf_norm, color=config.colors.dtu_red, linewidth=0.75)
+    ax5.set_title("Data filtered and normalized (vertical axis dimensionless)")
     ax5.set_xlabel("Time [s]")
     ax5.grid()
 
-    # fig.suptitle(make_plot_title(filename), fontsize="xx-large")
+    fig.suptitle("Filtering process", fontsize="x-large")
     fig.tight_layout()
 
     return fig

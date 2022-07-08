@@ -5,9 +5,13 @@ from sys import platform
 import pandas as pd
 from omegaconf import OmegaConf
 
-# Get noisy rec list from the configuration file
+# Get stuff from configuration file
 config = OmegaConf.load("config.yaml")
 remove_recs = config.noisy_recs
+all_electrodes = config.electrodes.all_electrodes_arranged
+channel_names = [c[:-3] for c in all_electrodes]
+healthy_ids = config.subject_classes.healthy_num
+depressed_ids = config.subject_classes.depressed_num
 
 # Get root folder based on which operating system I'm working on
 root = "Data/tDCS_EEG_data/Epochs/"
@@ -208,8 +212,48 @@ def create_combined_dfs():
     return
 
 
+def combine_BIMF_dfs():
+    # Get file names
+    path = root + "10_seconds/BIMFs/"
+    bimf_files = os.listdir(path)
+
+    # Initialize dataframe
+    with open(path + bimf_files[0], "rb") as f:
+        first_file = pickle.load(f)
+    all_BIMFs_df = first_file[first_file.columns[0:5]]
+    bimf_files = bimf_files[1:]
+
+    # Concatenate all other files
+    for file in bimf_files:
+        with open(path + file, "rb") as f:
+            current_file = pickle.load(f)
+        bimf_cols = current_file.columns[0:5]
+        current_file = current_file[bimf_cols]
+        all_BIMFs_df = pd.concat([all_BIMFs_df, current_file], axis=1)
+
+    # Add ID columns
+    id_cols = first_file[first_file.columns[-2:]]
+    all_BIMFs_df = pd.concat([all_BIMFs_df, id_cols], axis=1)
+    all_BIMFs_df["Depressed"] = all_BIMFs_df.apply(
+        lambda row: 1 if row["Subject_ID"] in depressed_ids else 0, axis=1
+    )
+
+    # Save as .pickle
+    with open(path + "/all_BIMFs_pre_EC.pickle", "wb") as f:
+        pickle.dump(all_BIMFs_df, f)
+
+    print("Combined BIMF dataframe SAVED.")
+
+    return
+
+
 if __name__ == "__main__":
     # Check whether we have already made and saved the combined data files
     check_file = root + "Whole_rec/all_2min.pickle"
     if not os.path.exists(check_file):
         create_combined_dfs()
+
+    # Check whether we have already made and saved the combined BIMF data file
+    check_file = root + "10_seconds/BIMFs/all_BIMFs_pre_EC.pickle"
+    if not os.path.exists(check_file):
+        combine_BIMF_dfs()
