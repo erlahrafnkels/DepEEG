@@ -99,6 +99,7 @@ def update_filename(file):
 
 
 def correct_refs(df):
+    # !! Later it was decided to remove all recordings that were not initially A1/A2 referenced !!
     df.update(df[A1ref].sub(df["A1"], axis=0))
     df.columns = [x + "-A1" if x in A1ref else x for x in df]
     df.update(df[A2ref].sub(df["A2"], axis=0))
@@ -119,6 +120,7 @@ def clean_data(files):
         df.columns = df.columns.str.replace("EEG ", "")
 
         # First, subtract A1 and A2 references from corresponding columns if it hasn't been done
+        # !! Later it was decided to remove all recordings that were not initially A1/A2 referenced !!
         if not ("-A1" or "-A2") in df.columns[1]:
             df = correct_refs(df)
 
@@ -335,45 +337,8 @@ if __name__ == "__main__":
         filter_and_ica(data_path, subjects)
         print("Filtered and ICA files saved.")
 
-    # Plot only raw signal
-    plot_raw = False
-    if plot_raw:
-        # Read in raw, cleaned data
-        filename = "S1/S1_pre_EC.txt"
-        data_path = root + "Data/tDCS_EEG_data/Data_cleaned/"
-        data = pd.read_csv(data_path + filename, sep="\t", index_col=False)
-        no1 = data.columns[0][:-3]
-        no2 = data.columns[14][:-3]
-        no3 = data.columns[25][:-3]
-        raw1 = data.iloc[:, 0]
-        raw2 = data.iloc[:, 14]
-        raw3 = data.iloc[:, 25]
-
-        # Set up x-axis in time domain
-        points = raw1.shape[0]
-        x = np.linspace(0, points / samp_freq, points)
-
-        # Plot
-        plt.figure(figsize=(12, 8))
-        plt.subplot(3, 1, 1)
-        plt.plot(x, raw1, color=config.colors.dtu_red)
-        plt.title("Raw signal of channel " + no1)
-        plt.grid()
-        plt.subplot(3, 1, 2)
-        plt.plot(x, raw2, color=config.colors.dtu_red)
-        plt.title("Raw signal of channel " + no2)
-        plt.grid()
-        plt.subplot(3, 1, 3)
-        plt.plot(x, raw3, color=config.colors.dtu_red)
-        plt.title("Raw signal of channel " + no3)
-        plt.xlabel("Time [s]")
-        plt.grid()
-        plt.tight_layout()
-        plt.savefig("Images/S1_EC_pre_raw_signals.png", dpi=500)
-        plt.show()
-
     # Plot example process of filtering
-    plot_filter_process_example = True
+    plot_filter_process_example = False
 
     if plot_filter_process_example:
         plot_example_process("S1_pre_EC.txt", "S1", 0.5, 40)
@@ -383,7 +348,7 @@ if __name__ == "__main__":
     plot_artifact_removal_example = False
 
     if plot_artifact_removal_example:
-        test_file = root + "Data/tDCS_EEG_data/Data_cleaned/S11/S11_post_EO_filt.txt"
+        test_file = root + "Data/tDCS_EEG_data/Data_cleaned/S11/S11_ppst_EO_filt.txt"
         test_file_comps = (
             root + "Data/tDCS_EEG_data/Data_cleaned/S11/S11_post_EO_ICA_comps.txt"
         )
@@ -391,6 +356,7 @@ if __name__ == "__main__":
             root + "Data/tDCS_EEG_data/Data_cleaned/S11/S11_post_EO_ICA_mix.txt"
         )
         test_rec = pd.read_csv(test_file, sep="\t", index_col=False)
+        test_rec = cut_record(test_rec)
         test_rec_comps = pd.read_csv(test_file_comps, sep="\t", index_col=False)
         test_rec_mix = pd.read_csv(test_file_mix, sep="\t", index_col=False)
         comp_ids = [0, 14, 25]
@@ -398,7 +364,7 @@ if __name__ == "__main__":
             test_rec, test_rec_comps, test_rec_mix, comp_ids
         )
 
-        plot_record(test_rec, "S11_post_EO_filt.txt")
+        plot_record(test_rec, "S11_post_EO_ICA_comps.txt")
         plot_record(test_rec_comps, "ICA - S11_post_EO_ICA_comps.txt")
         plot_record(updated_comps, "Updated ICA - S11_post_EO_ICA_comps.txt")
         plot_record(updated_rec, "Reconstructed - S11_post_EO_filt.txt")

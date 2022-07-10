@@ -304,7 +304,7 @@ if __name__ == "__main__":
         else:
             plt.xticks([])
     plt.subplots_adjust(wspace=0, hspace=0)
-    plt.show()
+    # plt.show()
 
     # ------------------------------------------- NON-VMD FEATURE CALCULATIONS -------------------------------------
 

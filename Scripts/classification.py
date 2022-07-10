@@ -10,7 +10,7 @@ from mrmr import mrmr_classif
 from omegaconf import OmegaConf
 from scipy.stats import zscore
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.ensemble import RandomForestClassifier, VotingClassifier
+from sklearn.ensemble import VotingClassifier  # , RandomForestClassifier
 from sklearn.model_selection import GroupKFold  # , LeaveOneGroupOut
 from sklearn.model_selection import cross_validate
 from sklearn.neighbors import KNeighborsClassifier
@@ -30,6 +30,8 @@ samp_freq = config.sample_frequency
 noisy_recs = config.noisy_recs
 healthy_num = config.subject_classes.healthy_num
 depressed_num = config.subject_classes.depressed_num
+noref_pre_num = config.subject_classes.noref_pre_num
+noref_post_num = config.subject_classes.noref_post_num
 
 # Get root folder based on which operating system I'm working on
 root = "Data/tDCS_EEG_data/"
@@ -68,14 +70,13 @@ def plot_features_hist(feature_h, feature_d, bins, title):
     return fig
 
 
-def results_to_table(min, max, mean, pre, rec, f1, par, feat, file):
+def results_to_table(min, max, mean, std, pre, rec, f1, par, feat, file):
     # Read and fill in table
-    res_df = pd.read_csv("Results/result_table_format.csv")
-    res_df["Min"] = min
-    res_df["Max"] = max
+    res_df = pd.read_csv("Results/result_table_format_v1-noRF.csv")
+    # res_df["Min"] = min
+    # res_df["Max"] = max
     res_df["Mean"] = mean
-    # res_df["Mean accuracy"] = mean
-    # res_df["Standard deviation"] = std
+    res_df["St.dev."] = std
     res_df["Precision"] = pre
     res_df["Recall"] = rec
     res_df["F1-score"] = f1
@@ -86,7 +87,8 @@ def results_to_table(min, max, mean, pre, rec, f1, par, feat, file):
     now = datetime.now()
     dt_string = now.strftime("%d.%m.%y_%H.%M.%S")
     no_features = str(len(feat[0]))
-    filename = "results_" + no_features + "_" + file + "_" + dt_string + ".csv"
+    max_acc = str(res_df["Mean"].max())
+    filename = "results_" + no_features + "_" + file + "_" + dt_string + "-best_" + max_acc + ".csv"
     res_df.to_csv("Results/" + filename, sep=",", index=False)
 
     return
@@ -108,12 +110,21 @@ def CV_output(scores):
 
 if __name__ == "__main__":
     # Get feature matrix and target vector
-    current_feature_file = "all_pre_116s"  # "all_pre_EO_116s"
+    current_feature_file = "all_pre_EC_2min"
     with open(
         root + "Features_and_output/feature_df_" + current_feature_file + ".pickle",
         "rb",
     ) as f:
         feature_df = pickle.load(f)
+
+    # OBS! After re-reviewing the data, it was noticed that some recordings that did not have montage references
+    # were still being used - these are removed here
+    if "pre" in current_feature_file:
+        feature_df = feature_df[~feature_df["Subject_ID"].isin(noref_pre_num)]
+    elif "post" in current_feature_file:
+        feature_df = feature_df[~feature_df["Subject_ID"].isin(noref_post_num)]
+    else:
+        feature_df = feature_df[~feature_df["Subject_ID"].isin(noref_pre_num + noref_post_num)]
 
     # Create feature matrix and target vector
     X = feature_df.iloc[:, :-2]
@@ -160,7 +171,7 @@ if __name__ == "__main__":
     # to choose is n/p>=5 where n is datapoints and p parameters (features)
     # However, paper also says that a larger number have shown notable success
 
-    # Using MRMR (Minimum Redundancy - Maximum Relevance)
+    # Using mRMR (Minimum Redundancy - Maximum Relevance)
     K = 5
     selected_features = mrmr_classif(X=X, y=y, K=K)
 
@@ -192,7 +203,7 @@ if __name__ == "__main__":
         "Linear support vector machine RBF (LSVM)",
         "K-nearest neighbors (KNN)",
         "Decision tree (DT)",
-        "Random forest (RF)",
+        # "Random forest (RF)",
         "Ensemble classifier",
     ]
 
@@ -202,7 +213,7 @@ if __name__ == "__main__":
         SVC(kernel="linear"),
         KNeighborsClassifier(),
         DecisionTreeClassifier(),
-        RandomForestClassifier(),
+        # RandomForestClassifier(),
     ]
 
     # Add ensemble classifier which combines all the other ones and uses majority voting
@@ -212,7 +223,7 @@ if __name__ == "__main__":
         (clf_names[2], classifiers[2]),
         (clf_names[3], classifiers[3]),
         (clf_names[4], classifiers[4]),
-        (clf_names[5], classifiers[5]),
+        # (clf_names[5], classifiers[5]),
     ]
     eclf = VotingClassifier(estimators=estimators, n_jobs=-1, voting="hard")
     classifiers.append(eclf)
@@ -255,6 +266,7 @@ if __name__ == "__main__":
         min_acc_vals.append(round(scores["test_accuracy"].min(), 3))
         max_acc_vals.append(round(scores["test_accuracy"].max(), 3))
         mean_acc_vals.append(round(scores["test_accuracy"].mean(), 3))
+        std_vals.append(round(scores["test_accuracy"].std(), 3))
         precision_vals.append(round(scores["test_precision"].mean(), 3))
         recall_vals.append(round(scores["test_recall"].mean(), 3))
         f1_score_vals.append(round(scores["test_f1"].mean(), 3))
@@ -277,6 +289,7 @@ if __name__ == "__main__":
             min_acc_vals,
             max_acc_vals,
             mean_acc_vals,
+            std_vals,
             precision_vals,
             recall_vals,
             f1_score_vals,

@@ -6,6 +6,7 @@ from plot_title import make_plot_title
 config = OmegaConf.load("config.yaml")
 samp_freq = config.sample_frequency
 color_codes = [c[1] for c in config.colors.items()]
+color_codes = color_codes[0:3]
 
 
 def plot_record(record, filename):
@@ -15,22 +16,23 @@ def plot_record(record, filename):
     x = np.linspace(0, datapoints / samp_freq, datapoints)
 
     # Compose plot
-    fig = plt.figure(figsize=(12, 8))
+    fig = plt.figure(figsize=(8, 6))
     color = 0
 
     for i in range(0, channels):
         if "ICA" in filename:
             y = i / 10
-            plt.text(-1, -y - 0.02, record.columns[i], fontsize="small", ha="right")
+            plt.text(-1, -y - 0.02, record.columns[i], fontsize="x-small", ha="right")
         else:
             y = i * 20
-            plt.text(-1, -y - 3, record.columns[i], fontsize="small", ha="right")
-        # if color == len(color_codes):
-        color = 0
+            plt.text(-1, -y - 3, record.columns[i], fontsize="x-small", ha="right")
+        if color == len(color_codes):
+            color = 0
         plt.plot(x, record.iloc[:, i] - y, color=color_codes[color], linewidth=0.75)
         color += 1
 
-    plt.title(make_plot_title(filename), fontsize="x-large")
+    # plt.title(make_plot_title(filename), fontsize="x-large")
+    plt.title(filename, fontsize="large")
     plt.xlabel("Time [s]")
     plt.yticks([])
     plt.box(False)
