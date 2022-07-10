@@ -102,6 +102,12 @@ subject_classes:
   depressed_num: [
     1, 4, 5, 7, 8, 11, 16, 17, 18, 21, 22, 26, 27, 51, 52, 54, 58, 59, 31, 33, 35, 36, 37, 40, 41, 43, 44, 45
   ]
+  noref_pre_num: [
+    1, 4, 9, 10, 35, 36
+  ]
+  noref_post_num: [
+    3, 4
+  ]
 
 # Noisy records which should be removed and not used
 # S51_post_EC_DepActive_2min.txt removed because it is much shorter than all others (only 100 s after cutting)
