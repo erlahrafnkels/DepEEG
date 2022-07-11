@@ -88,7 +88,17 @@ def results_to_table(min, max, mean, std, pre, rec, f1, par, feat, file):
     dt_string = now.strftime("%d.%m.%y_%H.%M.%S")
     no_features = str(len(feat[0]))
     max_acc = str(res_df["Mean"].max())
-    filename = "results_" + no_features + "_" + file + "_" + dt_string + "-best_" + max_acc + ".csv"
+    filename = (
+        "results_"
+        + no_features
+        + "_"
+        + file
+        + "_"
+        + dt_string
+        + "-best_"
+        + max_acc
+        + ".csv"
+    )
     res_df.to_csv("Results/" + filename, sep=",", index=False)
 
     return
@@ -110,7 +120,7 @@ def CV_output(scores):
 
 if __name__ == "__main__":
     # Get feature matrix and target vector
-    current_feature_file = "all_pre_EC_2min"
+    current_feature_file = "all_pre_EC_2min-pearson-kurt"
     with open(
         root + "Features_and_output/feature_df_" + current_feature_file + ".pickle",
         "rb",
@@ -124,7 +134,9 @@ if __name__ == "__main__":
     elif "post" in current_feature_file:
         feature_df = feature_df[~feature_df["Subject_ID"].isin(noref_post_num)]
     else:
-        feature_df = feature_df[~feature_df["Subject_ID"].isin(noref_pre_num + noref_post_num)]
+        feature_df = feature_df[
+            ~feature_df["Subject_ID"].isin(noref_pre_num + noref_post_num)
+        ]
 
     # Create feature matrix and target vector
     X = feature_df.iloc[:, :-2]
@@ -172,7 +184,7 @@ if __name__ == "__main__":
     # However, paper also says that a larger number have shown notable success
 
     # Using mRMR (Minimum Redundancy - Maximum Relevance)
-    K = 1
+    K = 5
     selected_features = mrmr_classif(X=X, y=y, K=K)
 
     print("SELECTED FEATURES (", len(selected_features), "):")

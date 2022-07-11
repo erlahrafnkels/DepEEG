@@ -6,11 +6,11 @@ import warnings
 from sys import platform
 
 import matplotlib.pyplot as plt
-from neurodsp.spectral import compute_spectrum
 # from neurodsp.timefrequency import freq_by_time
 import numpy as np
 import pandas as pd
 import yasa
+from neurodsp.spectral import compute_spectrum
 # from dit.other import renyi_entropy
 from omegaconf import OmegaConf
 from scipy.signal import hilbert
@@ -186,16 +186,19 @@ def plot_BIMFs(orig_sig, one_bimf, channel_name, h, K=5):
 def analytic_BIMF(bimf):
     h_transform = hilbert(bimf)
     a = bimf + h_transform
+    print(h_transform)
+    print(a)
     return a
 
 
 def spectral_centroid(a_bimf):
     a_bimf = a_bimf.to_numpy()
+    print(a_bimf)
     print("a bimf:")
     print(a_bimf.shape)
     # Instantanious frequency
     inst_phase = np.unwrap(np.angle(a_bimf))
-    inst_freq = (np.diff(inst_phase) / (2.0 * np.pi) * samp_freq)
+    inst_freq = np.diff(inst_phase) / (2.0 * np.pi) * samp_freq
     # Power spectral density
     _, spectrum = compute_spectrum(sig=a_bimf, fs=samp_freq)
     print("Inst freq:")
@@ -217,7 +220,7 @@ def spectral_skewness():
 
 if __name__ == "__main__":
     # Load the data from a pickle file
-    current_data_file = "all_post_EC_2min"
+    current_data_file = "all_pre_EC_2min"
     with open(root + "Epochs/Whole_rec/" + current_data_file + ".pickle", "rb") as f:
         current_dataset = pickle.load(f)
 
@@ -287,90 +290,97 @@ if __name__ == "__main__":
 
     # ------------------------------------------------ VMD ------------------------------------------------
 
-    # Parameters for VMD proposed in epilepsy paper
-    K = 5  # Number of decomposed nodes
-    alpha = 9800  # Data-fidelity constraint parameter
-    tau = 0  # Time step of dual ascent
-    DC = 0  # Number of DC components
-    init = 1  # Value of initial frequency for the decomposed modes
-    tol = 1e-6  # Tolerance value for convergence criteria
+    run_vmd_section = True
+    if run_vmd_section:
+        # Parameters for VMD proposed in epilepsy paper
+        K = 5  # Number of decomposed nodes
+        alpha = 9800  # Data-fidelity constraint parameter
+        tau = 0  # Time step of dual ascent
+        DC = 0  # Number of DC components
+        init = 1  # Value of initial frequency for the decomposed modes
+        tol = 1e-6  # Tolerance value for convergence criteria
 
-    # Split data into 10-second epochs
-    # Check whether we have already made and saved the combined data files
-    check_file = root + "Epochs/10_seconds/" + current_data_file[:-4] + "10s_epochs.pickle"
-    if not os.path.exists(check_file):
-        make_epochs(current_dataset, current_data_file[:-4] + "10s_epochs.pickle", 10)
-    with open(root + "Epochs/10_seconds/" + current_data_file[:-4] + "10s_epochs.pickle", "rb") as f:
-        df10 = pickle.load(f)
+        # Split data into 10-second epochs
+        # Check whether we have already made and saved the combined data files
+        check_file = (
+            root + "Epochs/10_seconds/" + current_data_file[:-4] + "10s_epochs.pickle"
+        )
+        if not os.path.exists(check_file):
+            make_epochs(
+                current_dataset, current_data_file[:-4] + "10s_epochs.pickle", 10
+            )
 
-    # Remove reference electrodes from column names (just to shorten)
-    df10.columns = df10.columns.str.replace("-A1", "")
-    df10.columns = df10.columns.str.replace("-A2", "")
+        # Get 10-second epoch data
+        with open(
+            root + "Epochs/10_seconds/" + current_data_file[:-4] + "10s_epochs.pickle",
+            "rb",
+        ) as f:
+            df10 = pickle.load(f)
 
-    # Fetch IDs
-    subjects = df10["Subject_ID"].unique()
-    epochs = df10["Epoch"].unique()
-    channels = df10.columns[:-3]
+        # Remove reference electrodes from column names (just to shorten)
+        df10.columns = df10.columns.str.replace("-A1", "")
+        df10.columns = df10.columns.str.replace("-A2", "")
 
-    # Run VMD and get BIMFs
-    # Check whether we have already run and saved the VMD
-    check_file = (
-        root + "Epochs/10_seconds/BIMFs/all_BIMFs_post_EC.pickle"
-    )
-    if not os.path.exists(check_file):
-        print("Calculating BIMFs")
-        calculate_BIMFs(df10, subjects, channels, epochs, alpha, tau, K, DC, init, tol)
+        # Fetch IDs
+        subjects = df10["Subject_ID"].unique()
+        epochs = df10["Epoch"].unique()
+        channels = df10.columns[:-3]
 
-    # Get BIMFs
-    with open(root + "Epochs/10_seconds/BIMFs/all_BIMFs_post_EC.pickle", "rb") as f:
-        all_bimfs = pickle.load(f)
+        # Run VMD and get BIMFs
+        # Check whether we have already run and saved the VMD
+        check_file = root + "Epochs/10_seconds/BIMFs/all_BIMFs_pre_EC.pickle"
+        if not os.path.exists(check_file):
+            print("Calculating BIMFs")
+            calculate_BIMFs(
+                df10, subjects, channels, epochs, alpha, tau, K, DC, init, tol
+            )
 
-    # VMD plot example
-    h_sub = 12
-    d_sub = 58
-    epo = 5
-    example_bimfs = ["BIMF1-T6", "BIMF2-T6", "BIMF3-T6", "BIMF4-T6", "BIMF5-T6"]
+        # Get BIMFs
+        with open(root + "Epochs/10_seconds/BIMFs/all_BIMFs_pre_EC.pickle", "rb") as f:
+            all_bimfs = pickle.load(f)
 
-    # Original signals
-    orig_sig_h = df10[(df10["Subject_ID"] == h_sub) & (df10["Epoch"] == epo)]
-    orig_sig_h = orig_sig_h["T6"]
-    orig_sig_d = df10[(df10["Subject_ID"] == d_sub) & (df10["Epoch"] == epo)]
-    orig_sig_d = orig_sig_d["T6"]
+        # VMD plot example
+        h_sub = 12
+        d_sub = 58
+        epo = 5
+        example_bimfs = ["BIMF1-T6", "BIMF2-T6", "BIMF3-T6", "BIMF4-T6", "BIMF5-T6"]
 
-    # Corresponding BIMFs
-    one_bimf_h = all_bimfs[
-        (all_bimfs["Subject_ID"] == h_sub) & (all_bimfs["Epoch"] == epo)
-    ]
-    one_bimf_h = one_bimf_h[example_bimfs]
-    one_bimf_d = all_bimfs[
-        (all_bimfs["Subject_ID"] == d_sub) & (all_bimfs["Epoch"] == epo)
-    ]
-    one_bimf_d = one_bimf_d[example_bimfs]
+        # Original signals
+        orig_sig_h = df10[(df10["Subject_ID"] == h_sub) & (df10["Epoch"] == epo)]
+        orig_sig_h = orig_sig_h["T6"]
+        orig_sig_d = df10[(df10["Subject_ID"] == d_sub) & (df10["Epoch"] == epo)]
+        orig_sig_d = orig_sig_d["T6"]
 
-    # Set up x-axis in time domain
-    points = orig_sig_h.shape[0]
-    x = np.linspace(0, points / samp_freq, points)
+        # Corresponding BIMFs
+        one_bimf_set_h = all_bimfs[
+            (all_bimfs["Subject_ID"] == h_sub) & (all_bimfs["Epoch"] == epo)
+        ]
+        one_bimf_set_h = one_bimf_set_h[example_bimfs]
+        one_bimf_set_d = all_bimfs[
+            (all_bimfs["Subject_ID"] == d_sub) & (all_bimfs["Epoch"] == epo)
+        ]
+        one_bimf_set_d = one_bimf_set_d[example_bimfs]
 
-    # Visualize decomposed modes
-    fig1 = plot_BIMFs(orig_sig_h, one_bimf_h, "T6", "healthy")
-    fig2 = plot_BIMFs(orig_sig_d, one_bimf_d, "T6", "depressed")
-    # plt.show()
+        # Set up x-axis in time domain
+        points = orig_sig_h.shape[0]
+        x = np.linspace(0, points / samp_freq, points)
 
-    # Analytic representation of BIMFs
+        # Visualize decomposed modes
+        fig1 = plot_BIMFs(orig_sig_h, one_bimf_set_h, "T6", "healthy")
+        fig2 = plot_BIMFs(orig_sig_d, one_bimf_set_d, "T6", "depressed")
+        # plt.show()
 
-    # Amplitude modulation bandwidth AM_Bω
-    # Frequency modulation bandwidth FM_Bω
+        # Calculate analytic representations of BIMFs and extraxt three features from them
+        # Spectral centroid C_sp
+        sp_c = []
+        for b in one_bimf_set_d.columns:
+            a = analytic_BIMF(one_bimf_set_d[b])
+            spc = spectral_centroid(a)
+            sp_c.append(spc)
+        print(sp_c)
 
-    # Spectral centroid C_sp
-    # sp_c = []
-    # for b in one_bimf_d.columns:
-    #     a = analytic_BIMF(one_bimf_d[b])
-    #     spc = spectral_centroid(a)
-    #     sp_c.append(spc)
-    # print(sp_c)
-
-    # Spectral variance σ2_sp
-    # Spectral skewness β_sp
+        # Spectral variance σ2_sp
+        # Spectral skewness β_sp
 
     # ------------------------------------------- NON-VMD FEATURE CALCULATIONS -------------------------------------
 
@@ -405,7 +415,7 @@ if __name__ == "__main__":
         means = np.mean(current_sub, axis=0)
         vars = np.var(current_sub, axis=0)
         skews = skew(current_sub, axis=0)
-        kurts = kurtosis(current_sub, axis=0)
+        kurts = kurtosis(current_sub, axis=0, fisher=False)
 
         # Calculate absolute spectral power of each frequency band, per channel
         # From https://raphaelvallat.com/yasa/build/html/generated/yasa.bandpower.html#yasa.bandpower
