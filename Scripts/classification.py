@@ -172,7 +172,7 @@ if __name__ == "__main__":
     # However, paper also says that a larger number have shown notable success
 
     # Using mRMR (Minimum Redundancy - Maximum Relevance)
-    K = 5
+    K = 1
     selected_features = mrmr_classif(X=X, y=y, K=K)
 
     print("SELECTED FEATURES (", len(selected_features), "):")

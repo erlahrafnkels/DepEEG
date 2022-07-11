@@ -216,6 +216,9 @@ def combine_BIMF_dfs():
     # Get file names
     path = root + "10_seconds/BIMFs/"
     bimf_files = os.listdir(path)
+    bimf_files.remove("all_BIMFs_pre_EC.pickle")
+    print(len(bimf_files))
+    print(bimf_files)
 
     # Initialize dataframe
     with open(path + bimf_files[0], "rb") as f:
@@ -239,7 +242,7 @@ def combine_BIMF_dfs():
     )
 
     # Save as .pickle
-    with open(path + "/all_BIMFs_pre_EC.pickle", "wb") as f:
+    with open(path + "/all_BIMFs_post_EC.pickle", "wb") as f:
         pickle.dump(all_BIMFs_df, f)
 
     print("Combined BIMF dataframe SAVED.")
@@ -254,6 +257,6 @@ if __name__ == "__main__":
         create_combined_dfs()
 
     # Check whether we have already made and saved the combined BIMF data file
-    check_file = root + "10_seconds/BIMFs/all_BIMFs_pre_EC.pickle"
+    check_file = root + "10_seconds/BIMFs/all_BIMFs_post_EC.pickle"
     if not os.path.exists(check_file):
         combine_BIMF_dfs()

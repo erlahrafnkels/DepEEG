@@ -31,8 +31,8 @@ def plot_record(record, filename):
         plt.plot(x, record.iloc[:, i] - y, color=color_codes[color], linewidth=0.75)
         color += 1
 
-    # plt.title(make_plot_title(filename), fontsize="x-large")
-    plt.title(filename, fontsize="large")
+    plt.title(make_plot_title(filename), fontsize="x-large")
+    # plt.title(filename, fontsize="large")
     plt.xlabel("Time [s]")
     plt.yticks([])
     plt.box(False)
