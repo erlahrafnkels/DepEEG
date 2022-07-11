@@ -6,12 +6,11 @@ import warnings
 from sys import platform
 
 import matplotlib.pyplot as plt
-# from neurodsp.timefrequency import freq_by_time
 import numpy as np
 import pandas as pd
 import yasa
+# from neurodsp.plts import plot_power_spectra
 from neurodsp.spectral import compute_spectrum
-# from dit.other import renyi_entropy
 from omegaconf import OmegaConf
 from scipy.signal import hilbert
 from scipy.stats import kurtosis, skew, zscore
@@ -184,38 +183,29 @@ def plot_BIMFs(orig_sig, one_bimf, channel_name, h, K=5):
 
 
 def analytic_BIMF(bimf):
+    # Analytic representation of a BIMF (complex nubmers)
     h_transform = hilbert(bimf)
     a = bimf + h_transform
-    print(h_transform)
-    print(a)
     return a
 
 
-def spectral_centroid(a_bimf):
+def stat_features_from_VMD(a_bimf):
     a_bimf = a_bimf.to_numpy()
-    print(a_bimf)
-    print("a bimf:")
-    print(a_bimf.shape)
-    # Instantanious frequency
-    inst_phase = np.unwrap(np.angle(a_bimf))
-    inst_freq = np.diff(inst_phase) / (2.0 * np.pi) * samp_freq
-    # Power spectral density
-    _, spectrum = compute_spectrum(sig=a_bimf, fs=samp_freq)
-    print("Inst freq:")
-    print(inst_freq.shape)
-    print("Spectrum:")
-    print(spectrum.shape)
+
+    # freqs: Frequencies at which the measure was calculated
+    # spectrum: Power spectral density
+    freqs, spectrum = compute_spectrum(sig=a_bimf, fs=samp_freq)
+
     # Spectral centroid
-    c = (inst_freq * spectrum) / spectrum
-    return c
+    c = (sum(freqs * spectrum)) / sum(spectrum)
 
+    # Spectral variance
+    v = (sum((freqs - c)**2 * spectrum)) / sum(spectrum)
 
-def spectral_variance():
-    return
+    # Spectral skewness
+    s = (sum(((freqs - c) / v)**3 * spectrum)) / sum(spectrum)
 
-
-def spectral_skewness():
-    return
+    return c, v, s
 
 
 if __name__ == "__main__":
@@ -366,21 +356,29 @@ if __name__ == "__main__":
         x = np.linspace(0, points / samp_freq, points)
 
         # Visualize decomposed modes
-        fig1 = plot_BIMFs(orig_sig_h, one_bimf_set_h, "T6", "healthy")
-        fig2 = plot_BIMFs(orig_sig_d, one_bimf_set_d, "T6", "depressed")
+        # fig1 = plot_BIMFs(orig_sig_h, one_bimf_set_h, "T6", "healthy")
+        # fig2 = plot_BIMFs(orig_sig_d, one_bimf_set_d, "T6", "depressed")
         # plt.show()
 
         # Calculate analytic representations of BIMFs and extraxt three features from them
-        # Spectral centroid C_sp
-        sp_c = []
+        # Spectral centroid C_sp, spectral variance σ2_sp and spectral skewness β_sp
+        sp_cents, sp_vars, sp_skews = [], [], []
         for b in one_bimf_set_d.columns:
             a = analytic_BIMF(one_bimf_set_d[b])
-            spc = spectral_centroid(a)
-            sp_c.append(spc)
-        print(sp_c)
+            c, v, s = stat_features_from_VMD(a)
+            sp_cents.append(c)
+            sp_vars.append(v)
+            sp_skews.append(s)
 
-        # Spectral variance σ2_sp
-        # Spectral skewness β_sp
+        print("Spectral centroids:")
+        print(sp_cents)
+        print()
+        print("Spectral variances:")
+        print(sp_vars)
+        print()
+        print("Spectral skewnesses:")
+        print(sp_skews)
+        print()
 
     # ------------------------------------------- NON-VMD FEATURE CALCULATIONS -------------------------------------
 

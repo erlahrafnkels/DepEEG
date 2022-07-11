@@ -6,9 +6,11 @@ from sys import platform
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from mrmr import mrmr_classif
 from omegaconf import OmegaConf
 from scipy.stats import zscore
+# from seaborn.rcmod import set_style
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.ensemble import VotingClassifier  # , RandomForestClassifier
 from sklearn.model_selection import GroupKFold  # , LeaveOneGroupOut
@@ -32,6 +34,7 @@ healthy_num = config.subject_classes.healthy_num
 depressed_num = config.subject_classes.depressed_num
 noref_pre_num = config.subject_classes.noref_pre_num
 noref_post_num = config.subject_classes.noref_post_num
+colors = config.colors
 
 # Get root folder based on which operating system I'm working on
 root = "Data/tDCS_EEG_data/"
@@ -100,6 +103,7 @@ def results_to_table(min, max, mean, std, pre, rec, f1, par, feat, file):
         + ".csv"
     )
     res_df.to_csv("Results/" + filename, sep=",", index=False)
+    print("Results saved")
 
     return
 
@@ -120,7 +124,7 @@ def CV_output(scores):
 
 if __name__ == "__main__":
     # Get feature matrix and target vector
-    current_feature_file = "all_pre_EC_2min-pearson-kurt"
+    current_feature_file = "all_pre_EC_2min"
     with open(
         root + "Features_and_output/feature_df_" + current_feature_file + ".pickle",
         "rb",
@@ -194,6 +198,26 @@ if __name__ == "__main__":
     # Make feature matrix which has only top K features
     chosen_columns = selected_features + ["Subject_ID", "Depression"]
     select_features_df = feature_df[feature_df.columns.intersection(chosen_columns)]
+
+    # For pair-plot
+    select_features_df["Subject group"] = select_features_df.apply(
+        lambda row: "Depressed" if row["Depression"] == 1 else "Healthy", axis=1
+    )
+    pair_plor_colors = {"Depressed": colors.dtu_red, "Healthy": colors.blue}
+
+    # Create the default pairplot
+    # sns.set(font_scale = 0.7)
+    # sns.set_style(style="white")
+    sns.pairplot(
+        select_features_df,
+        vars=select_features_df.columns[:-3],
+        hue="Subject group",
+        markers=["o", "D"],
+        palette=pair_plor_colors,
+        height=1.5,
+        corner=True,
+    )
+    plt.show()
 
     # Update feature matrix and target vector
     X = select_features_df.iloc[:, :-2].to_numpy()
@@ -295,7 +319,7 @@ if __name__ == "__main__":
         CV_output(scores)
 
     # Results into results table
-    save_results = True
+    save_results = False
     if save_results:
         results_to_table(
             min_acc_vals,
