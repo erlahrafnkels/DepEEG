@@ -10,20 +10,17 @@ import seaborn as sns
 from mrmr import mrmr_classif
 from omegaconf import OmegaConf
 from scipy.stats import zscore
+
 # from seaborn.rcmod import set_style
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.ensemble import VotingClassifier  # , RandomForestClassifier
-from sklearn.model_selection import GroupKFold  # , LeaveOneGroupOut
+from sklearn.ensemble import VotingClassifier
+from sklearn.model_selection import GroupKFold
 from sklearn.model_selection import cross_validate
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
-# import seaborn as sns
-
-
 warnings.filterwarnings("ignore")
-# sys.setrecursionlimit(3 * sys.getrecursionlimit())
 
 
 # Get global variables and lists from the configuration file
@@ -67,15 +64,15 @@ def plot_features_hist(feature_h, feature_d, bins, title):
     plt.title(title)
     plt.legend()
     maxfreq = max(n_d.max(), n_h.max())
-    # Set a clean upper y-axis limit.
+    # Set a clean upper y-axis limit
     plt.ylim(ymax=np.ceil(maxfreq / 10) * 10 if maxfreq % 10 else maxfreq + 10)
 
     return fig
 
 
-def results_to_table(min, max, mean, std, pre, rec, f1, par, feat, file):
+def results_to_table(min, max, mean, std, pre, rec, f1, par, feat, file, rem_corr):
     # Read and fill in table
-    res_df = pd.read_csv("Results/result_table_format_v1-noRF.csv")
+    res_df = pd.read_csv("Results/result_table_format_v3.csv")
     # res_df["Min"] = min
     # res_df["Max"] = max
     res_df["Mean"] = mean
@@ -83,7 +80,8 @@ def results_to_table(min, max, mean, std, pre, rec, f1, par, feat, file):
     res_df["Precision"] = pre
     res_df["Recall"] = rec
     res_df["F1-score"] = f1
-    res_df["Model parameters"] = par
+    res_df["Remove corr"] = rem_corr
+    # res_df["Model parameters"] = par
     res_df["Features"] = feat
 
     # Save table
@@ -123,10 +121,30 @@ def CV_output(scores):
 
 
 if __name__ == "__main__":
-    # Get feature matrix and target vector
+    # ---- VARIABLES ----
     current_feature_file = "all_pre_EC_2min"
+    is_vmd = False
+    is_all = True
+    remove_correlated = True
+    K = 8  # Trying 1-10, 15, 20
+    plot_pair_plot = False
+    save_results = False
+
+    # Which feature set?
+    which_features = "NEW-"
+    if is_vmd:
+        which_features = "NEW-vmd_"
+    elif is_all:
+        which_features = "NEW-all_"
+
+    # Get feature matrix and target vector
     with open(
-        root + "Features_and_output/feature_df_" + current_feature_file + ".pickle",
+        root
+        + "Features/"
+        + which_features
+        + "feature_df_"
+        + current_feature_file
+        + ".pickle",
         "rb",
     ) as f:
         feature_df = pickle.load(f)
@@ -146,40 +164,28 @@ if __name__ == "__main__":
     X = feature_df.iloc[:, :-2]
     y = feature_df["Depression"]
 
-    # ---------------------------- PLOT FEATURES ---------------------------------
-
-    feature_df_h = feature_df[feature_df["Depression"] == 0]
-    feature_df_d = feature_df[feature_df["Depression"] == 1]
-
-    mean_cols = [col for col in X.columns if "Mean" in col]
-    mean_df_h = feature_df_h[feature_df_h.columns.intersection(mean_cols)].stack()
-    mean_df_d = feature_df_d[feature_df_d.columns.intersection(mean_cols)].stack()
-
-    var_cols = [col for col in X.columns if "Var" in col]
-    var_df_h = feature_df_h[feature_df_h.columns.intersection(var_cols)].stack()
-    var_df_d = feature_df_d[feature_df_d.columns.intersection(var_cols)].stack()
-
-    skew_cols = [col for col in X.columns if "Skew" in col]
-    skew_df_h = feature_df_h[feature_df_h.columns.intersection(skew_cols)].stack()
-    skew_df_d = feature_df_d[feature_df_d.columns.intersection(skew_cols)].stack()
-
-    kurt_cols = [col for col in X.columns if "Kurt" in col]
-    kurt_df_h = feature_df_h[feature_df_h.columns.intersection(kurt_cols)].stack()
-    kurt_df_d = feature_df_d[feature_df_d.columns.intersection(kurt_cols)].stack()
-
-    plot_features_hist(mean_df_h, mean_df_d, "auto", "All channel means")
-    plot_features_hist(var_df_h, var_df_d, "auto", "All channel variances")
-    plot_features_hist(skew_df_h, skew_df_d, "auto", "All channel skewnesses")
-    plot_features_hist(kurt_df_h, kurt_df_d, "auto", "All channel kurtoses")
-    # plt.show()
-
     # ---------------------------- FEATURE SELECTION ---------------------------------
 
+    # If we want:
     # Choose subset of features for the feature selector to choose from
-    # region_names = ["frontal", "temporal", "parietal", "occipital", "central"]
-    # X = X.filter(regex='|'.join(region_names))
-    # sub_cols = [col for col in X.columns if "pow" in col]
+    # sub_cols = [col for col in X.columns if "BIMF2" in col]
     # X = X[X.columns.intersection(sub_cols)]
+
+    # Remove features that are very correlated
+    if remove_correlated:
+        correlated_features = []
+        correlation_matrix = X.corr()
+
+        for i in range(len(correlation_matrix.columns)):
+            for j in range(i):
+                if abs(correlation_matrix.iloc[i, j]) > 0.8:
+                    colname = correlation_matrix.columns[i]
+                    correlated_features.append(colname)
+
+        print("Before removing correlated:", X.shape)
+        X.drop(labels=correlated_features, axis=1, inplace=True)
+        print("After removing correlated:", X.shape)
+        print()
 
     # K is how many features we want to be chosen
     # According to "Statistical challenges of high-dimensional data"
@@ -188,10 +194,9 @@ if __name__ == "__main__":
     # However, paper also says that a larger number have shown notable success
 
     # Using mRMR (Minimum Redundancy - Maximum Relevance)
-    K = 5
     selected_features = mrmr_classif(X=X, y=y, K=K)
 
-    print("SELECTED FEATURES (", len(selected_features), "):")
+    print(f"SELECTED FEATURES ({len(selected_features)}):")
     print(selected_features)
     print()
 
@@ -199,39 +204,41 @@ if __name__ == "__main__":
     chosen_columns = selected_features + ["Subject_ID", "Depression"]
     select_features_df = feature_df[feature_df.columns.intersection(chosen_columns)]
 
-    # For pair-plot
-    select_features_df["Subject group"] = select_features_df.apply(
-        lambda row: "Depressed" if row["Depression"] == 1 else "Healthy", axis=1
-    )
-    pair_plor_colors = {"Depressed": colors.dtu_red, "Healthy": colors.blue}
+    # Plot pair plot?
+    if plot_pair_plot:
+        sfdf_plot = select_features_df.copy()
+        sfdf_plot["Subject group"] = sfdf_plot.apply(
+            lambda row: "Depressed" if row["Depression"] == 1 else "Healthy", axis=1
+        )
+        pair_plor_colors = {"Depressed": colors.dtu_red, "Healthy": colors.blue}
 
-    # Create the default pairplot
-    # sns.set(font_scale = 0.7)
-    # sns.set_style(style="white")
-    sns.pairplot(
-        select_features_df,
-        vars=select_features_df.columns[:-3],
-        hue="Subject group",
-        markers=["o", "D"],
-        palette=pair_plor_colors,
-        height=1.5,
-        corner=True,
-    )
-    plt.show()
+        # Create the default pairplot
+        # sns.set(font_scale = 0.7)
+        # sns.set_style(style="white")
+        sns.pairplot(
+            sfdf_plot,
+            vars=select_features_df.columns[:-3],
+            hue="Subject group",
+            markers=["o", "D"],
+            palette=pair_plor_colors,
+            height=1.5,
+            # corner=True,
+        )
+        plt.show()
+
+    # Correlation between selected features
+    # plt.figure()
+    # sns.heatmap(select_features_df.iloc[:, :-2].corr())
 
     # Update feature matrix and target vector
     X = select_features_df.iloc[:, :-2].to_numpy()
     y = select_features_df["Depression"].to_numpy()
     groups = select_features_df["Subject_ID"].to_numpy()
 
-    # Correlation between selected features
-    # plt.figure()
-    # sns.heatmap(select_features_df.iloc[:, :-2].corr())
-
     # Normalize X again, since we removed many features
     X = zscore(X, axis=None)
 
-    # --------------------------------- CLASSIFYING ----------------------------------
+    # --------------------------------- CLASSIFICATION ----------------------------------
 
     clf_names = [
         "Linear discriminant analysis (LDA)",
@@ -239,7 +246,6 @@ if __name__ == "__main__":
         "Linear support vector machine RBF (LSVM)",
         "K-nearest neighbors (KNN)",
         "Decision tree (DT)",
-        # "Random forest (RF)",
         "Ensemble classifier",
     ]
 
@@ -249,7 +255,6 @@ if __name__ == "__main__":
         SVC(kernel="linear"),
         KNeighborsClassifier(),
         DecisionTreeClassifier(),
-        # RandomForestClassifier(),
     ]
 
     # Add ensemble classifier which combines all the other ones and uses majority voting
@@ -259,7 +264,6 @@ if __name__ == "__main__":
         (clf_names[2], classifiers[2]),
         (clf_names[3], classifiers[3]),
         (clf_names[4], classifiers[4]),
-        # (clf_names[5], classifiers[5]),
     ]
     eclf = VotingClassifier(estimators=estimators, n_jobs=-1, voting="hard")
     classifiers.append(eclf)
@@ -269,7 +273,6 @@ if __name__ == "__main__":
     # This matters when/if we will use epoched data
     no_cv_splits = 10
     gkf = GroupKFold(n_splits=no_cv_splits)
-    # logo = LeaveOneGroupOut()
 
     # Initiate lists for accumulating results
     min_acc_vals = []
@@ -319,7 +322,6 @@ if __name__ == "__main__":
         CV_output(scores)
 
     # Results into results table
-    save_results = False
     if save_results:
         results_to_table(
             min_acc_vals,
@@ -331,5 +333,6 @@ if __name__ == "__main__":
             f1_score_vals,
             mdl_param_vals,
             sel_feat,
-            current_feature_file,
+            which_features + current_feature_file,
+            remove_correlated,
         )

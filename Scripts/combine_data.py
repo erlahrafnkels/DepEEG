@@ -223,7 +223,7 @@ def combine_BIMF_dfs(name):
         first_file = pickle.load(f)
     all_BIMFs_df = first_file[first_file.columns[0:5]]
     bimf_files = bimf_files[1:]
-    print("Added", first_file)
+    print("Added", bimf_files[0])
 
     # Concatenate all other files
     for file in bimf_files:
@@ -250,6 +250,40 @@ def combine_BIMF_dfs(name):
     return
 
 
+def combine_feature_dfs(non_vmd_name, vmd_name, which):
+    path = "Data/tDCS_EEG_data/Features/"
+
+    # Get non-VMD feature table
+    with open(path + non_vmd_name, "rb") as f:
+        non_vmd_df = pickle.load(f)
+
+    # Get non-VMD feature table
+    with open(path + vmd_name, "rb") as f:
+        vmd_df = pickle.load(f)
+
+    # Combine
+    all_features_df = pd.merge(
+        non_vmd_df,
+        vmd_df,
+        left_on=["Subject_ID", "Depression"],
+        right_on=["Subject_ID", "Depression"],
+    )
+
+    # Move ID columns to the end
+    sub = all_features_df.pop('Subject_ID')
+    dep = all_features_df.pop('Depression')
+    all_features_df['Subject_ID'] = sub
+    all_features_df['Depression'] = dep
+
+    # Save as .pickle
+    with open(path + "NEW-all_feature_df_" + which + ".pickle", "wb") as f:
+        pickle.dump(all_features_df, f)
+
+    print("Combined feature dataframe SAVED.")
+
+    return
+
+
 if __name__ == "__main__":
     # Check whether we have already made and saved the combined data files
     check_file = root + "Whole_rec/all_2min.pickle"
@@ -257,7 +291,13 @@ if __name__ == "__main__":
         create_combined_dfs()
 
     # Check whether we have already made and saved the combined BIMF data file
-    name = "pre_EO"
+    name = "post_EO"
     check_file = root + "10_seconds/BIMFs/all_BIMFs_" + name + ".pickle"
     if not os.path.exists(check_file):
         combine_BIMF_dfs(name)
+
+    # Combine feature tables (non-VMD and VMD)
+    which = "all_pre_EC_2min"
+    non_vmd_df = "NEW-feature_df_" + which + ".pickle"
+    vmd_df = "NEW-vmd_feature_df_" + which + ".pickle"
+    combine_feature_dfs(non_vmd_df, vmd_df, which)

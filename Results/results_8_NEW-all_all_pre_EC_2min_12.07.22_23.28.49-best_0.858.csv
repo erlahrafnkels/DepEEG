@@ -1,0 +1,7 @@
+Classifier,Mean,St.dev.,Precision,Recall,F1-score,Remove corr,Features
+LDA,0.858,0.145,0.867,0.717,0.76,True,"['Kurt-FCz', 'Skew-T4', 'BIMF1-S-TP8', 'Var-Fp2', 'Skew-FT7', 'Kurt-FC3', 'Skew-O1', 'BIMF2-S-T6']"
+SVM (RBF),0.608,0.269,0.4,0.2,0.267,True,
+SVM (Lin),0.633,0.269,0.4,0.2,0.267,True,
+KNN,0.725,0.19,0.8,0.433,0.55,True,
+DT,0.575,0.177,0.55,0.633,0.533,True,
+MVE,0.717,0.215,0.7,0.383,0.483,True,
