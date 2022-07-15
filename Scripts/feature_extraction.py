@@ -11,7 +11,7 @@ import yasa
 from neurodsp.spectral import compute_spectrum
 from omegaconf import OmegaConf
 from scipy.signal import hilbert
-from scipy.stats import kurtosis, skew, zscore
+from scipy.stats import kurtosis, skew  # , zscore
 from vmdpy import VMD
 
 warnings.filterwarnings("ignore")
@@ -119,7 +119,7 @@ def calculate_BIMFs(df, subjects, channels, epochs, alpha, tau, K, DC, init, tol
 
 def plot_BIMFs(orig_sig, one_bimf, channel_name, h, K=5):
     # Visualize signal and it's decomposed modes
-    fig = plt.figure(figsize=(10, 8))
+    fig = plt.figure(figsize=(8, 6))
 
     # Set up x-axis in time domain
     points = orig_sig.shape[0]
@@ -127,14 +127,14 @@ def plot_BIMFs(orig_sig, one_bimf, channel_name, h, K=5):
 
     # Plot
     plt.subplot(K + 1, 1, 1)
-    plt.plot(x, orig_sig, color=color_codes[0], linewidth=0.75)
+    plt.plot(x, orig_sig, color=color_codes[0], linewidth=0.9)
     plt.xticks([])
     plt.yticks([])
     plt.ylabel(channel_name + " signal")
     plt.title(f"Signal (red) and BIMFs (orange) - {h} subject")
     for m in range(K):
         plt.subplot(K + 1, 1, m + 2)
-        plt.plot(x, one_bimf.iloc[:, m], color=color_codes[6], linewidth=0.75)
+        plt.plot(x, one_bimf.iloc[:, m], color=color_codes[6], linewidth=0.9)
         plt.ylabel(f"BIMF{m+1}")
         plt.yticks([])
         if m == K - 1:
@@ -209,11 +209,11 @@ def stat_features_from_VMD(a_bimf):
 
 if __name__ == "__main__":
     # ---- VARIABLES ----
-    current_data_file = "all_pre_EC_2min"
+    current_data_file = "all_pre_EO_2min"
     # VMD
-    run_vmd_section = True
+    run_vmd_section = False
     plot_vmd_examples = False
-    save_vmd_features = True
+    save_vmd_features = False
     # Non-VMD
     run_non_vmd_section = False
     save_non_vmd_features = False
@@ -352,7 +352,7 @@ if __name__ == "__main__":
             df10.columns = df10.columns.str.replace("-A2", "")
 
             # Plot
-            fig1, fig2 = plot_BIMFs_h_and_d_examples(df10, all_bimfs, "Oz", 12, 58, 0)
+            fig1, fig2 = plot_BIMFs_h_and_d_examples(df10, all_bimfs, "F3", 12, 58, 5)
             plt.show()
 
         # Create empty lists for feature matrix and target vector
@@ -398,7 +398,7 @@ if __name__ == "__main__":
 
         # When feature matrix has been filled with values, we normalize it
         vmd_feature_mat = np.array(vmd_feature_mat).astype(float)
-        vmd_feature_mat = zscore(vmd_feature_mat, axis=None)
+        # vmd_feature_mat = zscore(vmd_feature_mat, axis=None)
         # vmd_feature_mat = zscore(vmd_feature_mat, axis=1)
         vmd_targets = np.array(vmd_targets)
 
@@ -410,11 +410,11 @@ if __name__ == "__main__":
         if save_vmd_features:
             # Save feature matrix as .pickle file
             with open(
-                root + "Features/NEW-vmd_feature_df_" + current_data_file + ".pickle",
+                root + "Features/vmd_feature_df_" + current_data_file[:-5] + ".pickle",
                 "wb",
             ) as f:
                 pickle.dump(feature_df, f)
-            print("VMD feature matrix saved.")
+            print(f"VMD feature matrix for {current_data_file} saved.")
 
     # ------------------------------------------- NON-VMD FEATURE CALCULATIONS -------------------------------------
 
@@ -491,11 +491,11 @@ if __name__ == "__main__":
             targets.append([sub, is_depressed])
             feature_mat.append(feature_row)
 
-        # ------------------------------------------------ NON-VMD FEATURE MATRIX ------------------------------------------------
+        # ----------------------------------------- NON-VMD FEATURE MATRIX -----------------------------------------
 
         # When feature matrix has been filled with values, we normalize it
         feature_mat = np.array(feature_mat).astype(float)
-        feature_mat = zscore(feature_mat, axis=None)
+        # feature_mat = zscore(feature_mat, axis=None)
         # feature_mat = zscore(feature_mat, axis=1)
         targets = np.array(targets)
 
@@ -507,8 +507,11 @@ if __name__ == "__main__":
         if save_non_vmd_features:
             # Save feature matrix as .pickle file
             with open(
-                root + "Features/NEW-feature_df_" + current_data_file + ".pickle",
+                root
+                + "Features/other_feature_df_"
+                + current_data_file[:-5]
+                + ".pickle",
                 "wb",
             ) as f:
                 pickle.dump(feature_df, f)
-            print("Non-VMD feature matrix saved.")
+            print(f"Non-VMD feature matrix for {current_data_file} saved.")

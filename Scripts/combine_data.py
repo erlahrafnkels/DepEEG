@@ -2,8 +2,10 @@ import os
 import pickle
 from sys import platform
 
+import numpy as np
 import pandas as pd
 from omegaconf import OmegaConf
+from scipy.stats import zscore
 
 # Get stuff from configuration file
 config = OmegaConf.load("config.yaml")
@@ -250,14 +252,14 @@ def combine_BIMF_dfs(name):
     return
 
 
-def combine_feature_dfs(non_vmd_name, vmd_name, which):
+def combine_feature_dfs(non_vmd_name, vmd_name, which, z_norm):
     path = "Data/tDCS_EEG_data/Features/"
 
     # Get non-VMD feature table
     with open(path + non_vmd_name, "rb") as f:
         non_vmd_df = pickle.load(f)
 
-    # Get non-VMD feature table
+    # Get VMD feature table
     with open(path + vmd_name, "rb") as f:
         vmd_df = pickle.load(f)
 
@@ -270,13 +272,148 @@ def combine_feature_dfs(non_vmd_name, vmd_name, which):
     )
 
     # Move ID columns to the end
-    sub = all_features_df.pop('Subject_ID')
-    dep = all_features_df.pop('Depression')
-    all_features_df['Subject_ID'] = sub
-    all_features_df['Depression'] = dep
+    sub = all_features_df.pop("Subject_ID")
+    dep = all_features_df.pop("Depression")
+    all_features_df["Subject_ID"] = sub
+    all_features_df["Depression"] = dep
 
     # Save as .pickle
-    with open(path + "NEW-all_feature_df_" + which + ".pickle", "wb") as f:
+    with open(path + "ALL_feature_df_" + which + ".pickle", "wb") as f:
+        pickle.dump(all_features_df, f)
+
+    print(f"Combined feature dataframe for {which} SAVED.")
+
+    return
+
+
+def split_other_features(which):
+    # Split feature tables into subtables by feature set
+    # We have the VMD and all combined tables already
+    # Need subtables for statistical, pow per channel and pow per region
+    stat_names = ["Mean", "Var", "Skew", "Kurt", "Subject_ID", "Depression"]
+    region_names = [
+        "frontal",
+        "temporal",
+        "parietal",
+        "occipital",
+        "central",
+        "Subject_ID",
+        "Depression",
+    ]
+    feature_path = "Data/tDCS_EEG_data/Features/"
+
+    # Get "other" feature table
+    with open(feature_path + "other_feature_df_" + which + ".pickle", "rb") as f:
+        other_features_df = pickle.load(f)
+
+    # Statistical
+    stat_df = other_features_df.copy()
+    stat_df = stat_df.filter(regex="|".join(stat_names))
+    print("Stats:\t\t", stat_df.shape)
+
+    # Power per region
+    pow_reg_df = other_features_df.copy()
+    pow_reg_df = pow_reg_df.filter(regex="|".join(region_names))
+    print("Region powers:\t", pow_reg_df.shape)
+
+    # Power per channel
+    all_cols = list(other_features_df.columns)
+    remove_cols = list(pow_reg_df.columns[:-2]) + list(stat_df.columns[:-2])
+    pow_chan_names = [col for col in all_cols if col not in remove_cols]
+    pow_chan_df = other_features_df.copy()
+    pow_chan_df = pow_chan_df.filter(regex="|".join(pow_chan_names))
+    print("Channel powers:\t", pow_chan_df.shape)
+
+    # Save subdataframes as .pickle
+    with open(feature_path + "stat_feature_df_" + which + ".pickle", "wb") as f:
+        pickle.dump(stat_df, f)
+
+    with open(feature_path + "pow_reg_feature_df_" + which + ".pickle", "wb") as f:
+        pickle.dump(pow_reg_df, f)
+
+    with open(feature_path + "pow_chan_feature_df_" + which + ".pickle", "wb") as f:
+        pickle.dump(pow_chan_df, f)
+
+    print(f"Split feature dataframes for {which} SAVED.")
+
+
+def combine_norm_features():
+    path = "Data/tDCS_EEG_data/Features/"
+
+    # Get non-VMD feature table PRE
+    with open(path + "non-norm-other_feature_df_all_pre_EC.pickle", "rb") as f:
+        non_vmd_df_pre = pickle.load(f)
+
+    # Get VMD feature table PRE
+    with open(path + "non-norm-vmd_feature_df_all_pre_EC.pickle", "rb") as f:
+        vmd_df_pre = pickle.load(f)
+
+    # Get non-VMD feature table POST
+    with open(path + "non-norm-other_feature_df_all_post_EC.pickle", "rb") as f:
+        non_vmd_df_post = pickle.load(f)
+
+    # Get VMD feature table POST
+    with open(path + "non-norm-vmd_feature_df_all_post_EC.pickle", "rb") as f:
+        vmd_df_post = pickle.load(f)
+
+    # Add pre/post columns
+    non_vmd_df_pre["Post"] = 0
+    vmd_df_pre["Post"] = 0
+    non_vmd_df_post["Post"] = 1
+    vmd_df_post["Post"] = 1
+
+    print(non_vmd_df_pre.shape)
+    print(vmd_df_pre.shape)
+    print(non_vmd_df_post.shape)
+    print(vmd_df_post.shape)
+
+    # Combine PRES
+    all_features_pre_df = pd.merge(
+        non_vmd_df_pre,
+        vmd_df_pre,
+        left_on=["Subject_ID", "Depression", "Post"],
+        right_on=["Subject_ID", "Depression", "Post"],
+    )
+
+    # Combine POSTS
+    all_features_post_df = pd.merge(
+        non_vmd_df_post,
+        vmd_df_post,
+        left_on=["Subject_ID", "Depression", "Post"],
+        right_on=["Subject_ID", "Depression", "Post"],
+    )
+
+    # Combine ALL
+    all_features_df = all_features_pre_df.append(
+        all_features_post_df, ignore_index=True
+    )
+
+    print(all_features_df.shape)
+
+    # Remove ID columns for normalization
+    sub = all_features_df.pop("Subject_ID")
+    dep = all_features_df.pop("Depression")
+    post = all_features_df.pop("Post")
+
+    print(all_features_df.shape)
+
+    all_features_df_cols = all_features_df.columns
+
+    # When feature matrix has been filled with values, we normalize it
+    feature_mat = np.array(all_features_df).astype(float)
+    feature_mat = zscore(feature_mat, axis=None)  # All table
+    # feature_mat = zscore(feature_mat, axis=1)  # Per column
+
+    # Then put it into a dataframe so we have the column names
+    all_features_df = pd.DataFrame(feature_mat, columns=all_features_df_cols)
+    all_features_df["Subject_ID"] = sub
+    all_features_df["Depression"] = dep
+    all_features_df["Post"] = post
+
+    print(all_features_df.shape)
+
+    # Save as .pickle
+    with open(path + "ALL_feature_df_EC.pickle", "wb") as f:
         pickle.dump(all_features_df, f)
 
     print("Combined feature dataframe SAVED.")
@@ -285,19 +422,28 @@ def combine_feature_dfs(non_vmd_name, vmd_name, which):
 
 
 if __name__ == "__main__":
-    # Check whether we have already made and saved the combined data files
-    check_file = root + "Whole_rec/all_2min.pickle"
-    if not os.path.exists(check_file):
+    # What to run
+    create_combined_ppee_dfs = False
+    create_combined_BIMF_dfs = False
+    create_combined_feature_dfs = False
+    create_split_other_features = False
+    create_combined_norm_features = False
+    which = "all_pre_EO"
+
+    if create_combined_ppee_dfs:
         create_combined_dfs()
 
-    # Check whether we have already made and saved the combined BIMF data file
-    name = "post_EO"
-    check_file = root + "10_seconds/BIMFs/all_BIMFs_" + name + ".pickle"
-    if not os.path.exists(check_file):
+    if create_combined_BIMF_dfs:
+        name = which[4:]
         combine_BIMF_dfs(name)
 
-    # Combine feature tables (non-VMD and VMD)
-    which = "all_pre_EC_2min"
-    non_vmd_df = "NEW-feature_df_" + which + ".pickle"
-    vmd_df = "NEW-vmd_feature_df_" + which + ".pickle"
-    combine_feature_dfs(non_vmd_df, vmd_df, which)
+    if create_combined_feature_dfs:
+        non_vmd_df = "other_feature_df_" + which + ".pickle"
+        vmd_df = "vmd_feature_df_" + which + ".pickle"
+        combine_feature_dfs(non_vmd_df, vmd_df, which, z_norm=True)
+
+    if create_split_other_features:
+        split_other_features(which)
+
+    if create_combined_norm_features:
+        combine_norm_features()

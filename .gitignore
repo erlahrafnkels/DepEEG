@@ -118,7 +118,9 @@ venv.bak/
 .ropeproject
 
 # .vscode settings
-settings.json
+.vscode/*
+
+# Adn
 
 # mkdocs documentation
 /site
@@ -146,3 +148,5 @@ Microsoft/*
 # These scripts
 vmd_example.py
 temp.py
+plot_powers.py
+classifier_comparison_example.py

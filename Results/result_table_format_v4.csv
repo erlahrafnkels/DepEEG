@@ -1,0 +1,7 @@
+Classifier,Mean,St.dev.,Precision,Recall,F1-score,Remove corr,Features, y_true, y_pred
+LDA,,,,,,,,,
+SVM (RBF),,,,,,,,,
+SVM (Lin),,,,,,,,,
+KNN,,,,,,,,,
+DT,,,,,,,,,
+MVE,,,,,,,,,

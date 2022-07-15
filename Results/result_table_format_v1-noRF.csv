@@ -1,7 +1,0 @@
-Classifier,Mean,St.dev.,Precision,Recall,F1-score,Model parameters,Features
-LDA,,,,,,,
-SVM (RBF),,,,,,,
-SVM (Lin),,,,,,,
-KNN,,,,,,,
-DT,,,,,,,
-MVE,,,,,,,

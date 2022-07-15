@@ -1,7 +1,0 @@
-Classifier,Mean,St.dev.,Precision,Recall,F1-score,Model parameters,Features
-LDA,0.8,0.187,0.7,0.65,0.63,"{'covariance_estimator': None, 'n_components': None, 'priors': None, 'shrinkage': None, 'solver': 'svd', 'store_covariance': False, 'tol': 0.0001}","['BIMF2-S-T6', 'BIMF1-S-T6', 'BIMF5-S-Fp1', 'BIMF5-S-TP8', 'BIMF1-C-Fpz', 'BIMF2-S-Fp2', 'BIMF4-S-CPz', 'BIMF1-S-FC4', 'BIMF5-S-F4']"
-SVM (RBF),0.508,0.216,0.0,0.0,0.0,"{'C': 1.0, 'break_ties': False, 'cache_size': 200, 'class_weight': None, 'coef0': 0.0, 'decision_function_shape': 'ovr', 'degree': 3, 'gamma': 'scale', 'kernel': 'rbf', 'max_iter': -1, 'probability': False, 'random_state': None, 'shrinking': True, 'tol': 0.001, 'verbose': False}",
-SVM (Lin),0.475,0.284,0.15,0.2,0.167,"{'C': 1.0, 'break_ties': False, 'cache_size': 200, 'class_weight': None, 'coef0': 0.0, 'decision_function_shape': 'ovr', 'degree': 3, 'gamma': 'scale', 'kernel': 'linear', 'max_iter': -1, 'probability': False, 'random_state': None, 'shrinking': True, 'tol': 0.001, 'verbose': False}",
-KNN,0.667,0.274,0.658,0.667,0.603,"{'algorithm': 'auto', 'leaf_size': 30, 'metric': 'minkowski', 'metric_params': None, 'n_jobs': None, 'n_neighbors': 5, 'p': 2, 'weights': 'uniform'}",
-DT,0.733,0.162,0.75,0.567,0.613,"{'ccp_alpha': 0.0, 'class_weight': None, 'criterion': 'gini', 'max_depth': None, 'max_features': None, 'max_leaf_nodes': None, 'min_impurity_decrease': 0.0, 'min_samples_leaf': 1, 'min_samples_split': 2, 'min_weight_fraction_leaf': 0.0, 'random_state': None, 'splitter': 'best'}",
-MVE,0.7,0.201,0.6,0.483,0.483,,
